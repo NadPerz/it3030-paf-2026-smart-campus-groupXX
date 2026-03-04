@@ -11,6 +11,8 @@ jobs:
   backend:
     name: Backend (Java 17 / Maven)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     services:
       mysql:
@@ -53,6 +55,8 @@ jobs:
   frontend:
     name: Frontend (Node 18 / React)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout code
