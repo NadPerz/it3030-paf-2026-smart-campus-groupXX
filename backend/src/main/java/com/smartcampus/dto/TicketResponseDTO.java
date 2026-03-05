@@ -18,10 +18,10 @@ import java.util.List;
 @Builder
 public class TicketResponseDTO {
 
-    private Long id;
-    private Long userId;
+    private String id;
+    private String userId;
     private String userName;
-    private Long resourceId;
+    private String resourceId;
     private String resourceName;
     private String category;
     private String description;
@@ -29,7 +29,7 @@ public class TicketResponseDTO {
     private String location;
     private String contactDetails;
     private TicketStatus status;
-    private Long assignedToId;
+    private String assignedToId;
     private String assignedToName;
     private String resolutionNotes;
     private String rejectionReason;

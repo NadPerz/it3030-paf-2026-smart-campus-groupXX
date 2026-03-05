@@ -23,7 +23,9 @@ import java.util.List;
  *
  * CONFLICT DETECTION ALGORITHM:
  *   Before creating or approving a booking, call:
- *   bookingRepository.existsConflictingBooking(resourceId, date, startTime, endTime)
+ *   List<Booking> conflicts = bookingRepository.findConflictingBookings(
+ *       resourceId, date, startTime, endTime);
+ *   if (!conflicts.isEmpty()) { throw BookingConflictException; }
  *
  *   Two time slots conflict when:
  *     newStart < existingEnd  AND  newEnd > existingStart
@@ -46,12 +48,12 @@ public class BookingService {
     private final QRCodeService qrCodeService;
     private final NotificationService notificationService;
 
-    public BookingResponseDTO createBooking(Long userId, BookingRequestDTO dto) {
+    public BookingResponseDTO createBooking(String userId, BookingRequestDTO dto) {
         // TODO (Member 2): Implement — check conflicts, create booking with PENDING status
         throw new UnsupportedOperationException("TODO: Member 2 — implement createBooking()");
     }
 
-    public List<BookingResponseDTO> getMyBookings(Long userId) {
+    public List<BookingResponseDTO> getMyBookings(String userId) {
         // TODO (Member 2): Implement
         throw new UnsupportedOperationException("TODO: Member 2 — implement getMyBookings()");
     }
@@ -61,32 +63,32 @@ public class BookingService {
         throw new UnsupportedOperationException("TODO: Member 2 — implement getAllBookings()");
     }
 
-    public BookingResponseDTO getBookingById(Long id) {
+    public BookingResponseDTO getBookingById(String id) {
         // TODO (Member 2): Implement
         throw new UnsupportedOperationException("TODO: Member 2 — implement getBookingById()");
     }
 
-    public BookingResponseDTO approveBooking(Long id, BookingApprovalDTO dto) {
+    public BookingResponseDTO approveBooking(String id, BookingApprovalDTO dto) {
         // TODO (Member 2): Implement — set APPROVED, generate QR code, notify user
         throw new UnsupportedOperationException("TODO: Member 2 — implement approveBooking()");
     }
 
-    public BookingResponseDTO rejectBooking(Long id, BookingApprovalDTO dto) {
+    public BookingResponseDTO rejectBooking(String id, BookingApprovalDTO dto) {
         // TODO (Member 2): Implement — set REJECTED, store reason, notify user
         throw new UnsupportedOperationException("TODO: Member 2 — implement rejectBooking()");
     }
 
-    public BookingResponseDTO cancelBooking(Long id, Long userId) {
+    public BookingResponseDTO cancelBooking(String id, String userId) {
         // TODO (Member 2): Implement — validate ownership, set CANCELLED
         throw new UnsupportedOperationException("TODO: Member 2 — implement cancelBooking()");
     }
 
-    public void deleteBooking(Long id) {
+    public void deleteBooking(String id) {
         // TODO (Member 2): Implement (admin only)
         throw new UnsupportedOperationException("TODO: Member 2 — implement deleteBooking()");
     }
 
-    public String getQRCode(Long bookingId) {
+    public String getQRCode(String bookingId) {
         // TODO (Member 2): Implement — return the stored QR code string
         throw new UnsupportedOperationException("TODO: Member 2 — implement getQRCode()");
     }
