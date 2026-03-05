@@ -18,10 +18,10 @@ import java.time.LocalTime;
 @Builder
 public class BookingResponseDTO {
 
-    private Long id;
-    private Long userId;
+    private String id;
+    private String userId;
     private String userName;
-    private Long resourceId;
+    private String resourceId;
     private String resourceName;
     private LocalDate bookingDate;
     private LocalTime startTime;
