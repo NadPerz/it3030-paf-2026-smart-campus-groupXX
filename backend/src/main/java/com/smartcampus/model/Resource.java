@@ -22,6 +22,7 @@ public class Resource {
     private String description;
     private LocalTime availabilityStart;
     private LocalTime availabilityEnd;
+    @Builder.Default
     private ResourceStatus status = ResourceStatus.ACTIVE;
     @CreatedDate
     private LocalDateTime createdAt;

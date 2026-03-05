@@ -17,6 +17,7 @@ public class User {
     private String email;
     private String name;
     private String profilePicture;
+    @Builder.Default
     private UserRole role = UserRole.USER;
     @CreatedDate
     private LocalDateTime createdAt;

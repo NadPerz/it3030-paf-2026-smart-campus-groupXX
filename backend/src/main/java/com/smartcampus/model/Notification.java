@@ -16,6 +16,7 @@ public class Notification {
     private String message;
     private String type;
     private String referenceId;
+    @Builder.Default
     private boolean isRead = false;
     @CreatedDate
     private LocalDateTime createdAt;
