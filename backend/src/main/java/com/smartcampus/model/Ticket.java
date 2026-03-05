@@ -25,6 +25,7 @@ public class Ticket {
     private TicketPriority priority;
     private String location;
     private String contactDetails;
+    @Builder.Default
     private TicketStatus status = TicketStatus.OPEN;
     private String assignedToId;
     private String assignedToName;

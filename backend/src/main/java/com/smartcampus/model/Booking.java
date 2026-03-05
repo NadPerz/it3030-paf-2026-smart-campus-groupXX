@@ -24,6 +24,7 @@ public class Booking {
     private LocalTime endTime;
     private String purpose;
     private Integer expectedAttendees;
+    @Builder.Default
     private BookingStatus status = BookingStatus.PENDING;
     private String adminRemarks;
     private String qrCode;
