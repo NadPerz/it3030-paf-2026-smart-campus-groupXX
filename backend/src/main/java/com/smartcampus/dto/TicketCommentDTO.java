@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
 @Builder
 public class TicketCommentDTO {
 
-    private Long id;
-    private Long userId;
+    private String id;
+    private String userId;
     private String userName;
     private String content;
     private LocalDateTime createdAt;

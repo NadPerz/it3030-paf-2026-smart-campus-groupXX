@@ -17,7 +17,7 @@ import lombok.*;
 public class TicketRequestDTO {
 
     /** Optional — links the ticket to a specific campus resource. */
-    private Long resourceId;
+    private String resourceId;
 
     @NotBlank(message = "Category is required")
     private String category;

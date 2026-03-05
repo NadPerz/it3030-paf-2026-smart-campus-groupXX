@@ -29,7 +29,7 @@ public class NotificationController {
 
     /** PATCH /api/notifications/{id}/read — Mark a notification as read */
     @PatchMapping("/{id}/read")
-    public ResponseEntity<NotificationDTO> markAsRead(@PathVariable Long id) {
+    public ResponseEntity<NotificationDTO> markAsRead(@PathVariable String id) {
         // TODO (Member 4): Extract userId from SecurityContext
         // return ResponseEntity.ok(notificationService.markAsRead(id, userId));
         return ResponseEntity.ok().build();
@@ -45,7 +45,7 @@ public class NotificationController {
 
     /** DELETE /api/notifications/{id} — Delete a notification */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteNotification(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteNotification(@PathVariable String id) {
         // TODO (Member 4): Extract userId from SecurityContext
         // notificationService.deleteNotification(id, userId);
         return ResponseEntity.noContent().build();

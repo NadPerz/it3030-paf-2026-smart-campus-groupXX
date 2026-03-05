@@ -15,11 +15,11 @@ import java.time.LocalDateTime;
 @Builder
 public class NotificationDTO {
 
-    private Long id;
+    private String id;
     private String title;
     private String message;
     private String type;
-    private Long referenceId;
+    private String referenceId;
     private boolean isRead;
     private LocalDateTime createdAt;
 }

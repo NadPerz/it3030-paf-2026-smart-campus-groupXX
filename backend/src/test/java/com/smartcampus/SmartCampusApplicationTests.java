@@ -10,12 +10,7 @@ import org.springframework.test.context.TestPropertySource;
  */
 @SpringBootTest
 @TestPropertySource(properties = {
-        "spring.datasource.url=jdbc:h2:mem:testdb",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
+        "spring.data.mongodb.uri=mongodb://localhost:27017/smart_campus_test",
         "spring.security.oauth2.client.registration.google.client-id=test-client-id",
         "spring.security.oauth2.client.registration.google.client-secret=test-client-secret"
 })

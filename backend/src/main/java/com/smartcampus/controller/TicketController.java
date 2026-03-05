@@ -46,14 +46,14 @@ public class TicketController {
 
     /** GET /api/tickets/{id} — Get ticket by ID */
     @GetMapping("/{id}")
-    public ResponseEntity<TicketResponseDTO> getTicketById(@PathVariable Long id) {
+    public ResponseEntity<TicketResponseDTO> getTicketById(@PathVariable String id) {
         // TODO (Member 3): return ResponseEntity.ok(ticketService.getTicketById(id));
         return ResponseEntity.ok().build();
     }
 
     /** PATCH /api/tickets/{id}/status — Update ticket status */
     @PatchMapping("/{id}/status")
-    public ResponseEntity<TicketResponseDTO> updateTicketStatus(@PathVariable Long id,
+    public ResponseEntity<TicketResponseDTO> updateTicketStatus(@PathVariable String id,
                                                                  @RequestBody String status) {
         // TODO (Member 3): Parse status enum, call ticketService.updateTicketStatus(id, status, notes)
         return ResponseEntity.ok().build();
@@ -61,15 +61,15 @@ public class TicketController {
 
     /** PUT /api/tickets/{id}/assign — Assign ticket to a technician */
     @PutMapping("/{id}/assign")
-    public ResponseEntity<TicketResponseDTO> assignTicket(@PathVariable Long id,
-                                                           @RequestParam Long technicianId) {
+    public ResponseEntity<TicketResponseDTO> assignTicket(@PathVariable String id,
+                                                           @RequestParam String technicianId) {
         // TODO (Member 3): return ResponseEntity.ok(ticketService.assignTicket(id, technicianId));
         return ResponseEntity.ok().build();
     }
 
     /** POST /api/tickets/{id}/comments — Add a comment to a ticket */
     @PostMapping("/{id}/comments")
-    public ResponseEntity<TicketCommentDTO> addComment(@PathVariable Long id,
+    public ResponseEntity<TicketCommentDTO> addComment(@PathVariable String id,
                                                         @RequestBody String content) {
         // TODO (Member 3): Extract userId from SecurityContext
         return ResponseEntity.ok().build();
@@ -77,14 +77,14 @@ public class TicketController {
 
     /** GET /api/tickets/{id}/comments — Get comments for a ticket */
     @GetMapping("/{id}/comments")
-    public ResponseEntity<List<TicketCommentDTO>> getComments(@PathVariable Long id) {
+    public ResponseEntity<List<TicketCommentDTO>> getComments(@PathVariable String id) {
         // TODO (Member 3): return ResponseEntity.ok(ticketService.getComments(id));
         return ResponseEntity.ok().build();
     }
 
     /** DELETE /api/tickets/{id} — Delete a ticket (admin only) */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTicket(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteTicket(@PathVariable String id) {
         // TODO (Member 3): ticketService.deleteTicket(id); return ResponseEntity.noContent().build();
         return ResponseEntity.noContent().build();
     }

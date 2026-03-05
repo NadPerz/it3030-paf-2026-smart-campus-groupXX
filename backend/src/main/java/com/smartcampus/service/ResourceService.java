@@ -34,7 +34,7 @@ public class ResourceService {
         throw new UnsupportedOperationException("TODO: Member 1 — implement getAllResources()");
     }
 
-    public ResourceResponseDTO getResourceById(Long id) {
+    public ResourceResponseDTO getResourceById(String id) {
         // TODO (Member 1): Implement
         throw new UnsupportedOperationException("TODO: Member 1 — implement getResourceById()");
     }
@@ -44,12 +44,12 @@ public class ResourceService {
         throw new UnsupportedOperationException("TODO: Member 1 — implement createResource()");
     }
 
-    public ResourceResponseDTO updateResource(Long id, ResourceRequestDTO dto) {
+    public ResourceResponseDTO updateResource(String id, ResourceRequestDTO dto) {
         // TODO (Member 1): Implement
         throw new UnsupportedOperationException("TODO: Member 1 — implement updateResource()");
     }
 
-    public void deleteResource(Long id) {
+    public void deleteResource(String id) {
         // TODO (Member 1): Implement
         throw new UnsupportedOperationException("TODO: Member 1 — implement deleteResource()");
     }
