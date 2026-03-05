@@ -37,33 +37,33 @@ public class NotificationService {
      * @param type        category string (e.g. "BOOKING_APPROVED", "TICKET_ASSIGNED")
      * @param referenceId ID of the related entity (booking ID, ticket ID, etc.) — nullable
      */
-    public void createNotification(Long userId, String title, String message,
-                                   String type, Long referenceId) {
+    public void createNotification(String userId, String title, String message,
+                                   String type, String referenceId) {
         // TODO (Member 4): Implement — find user, create Notification entity, save
         throw new UnsupportedOperationException("TODO: Member 4 — implement createNotification()");
     }
 
-    public List<NotificationDTO> getNotificationsForUser(Long userId) {
+    public List<NotificationDTO> getNotificationsForUser(String userId) {
         // TODO (Member 4): Implement
         throw new UnsupportedOperationException("TODO: Member 4 — implement getNotificationsForUser()");
     }
 
-    public NotificationDTO markAsRead(Long notificationId, Long userId) {
+    public NotificationDTO markAsRead(String notificationId, String userId) {
         // TODO (Member 4): Implement — verify ownership, set isRead = true
         throw new UnsupportedOperationException("TODO: Member 4 — implement markAsRead()");
     }
 
-    public void markAllAsRead(Long userId) {
+    public void markAllAsRead(String userId) {
         // TODO (Member 4): Implement — bulk update for user's unread notifications
         throw new UnsupportedOperationException("TODO: Member 4 — implement markAllAsRead()");
     }
 
-    public void deleteNotification(Long notificationId, Long userId) {
+    public void deleteNotification(String notificationId, String userId) {
         // TODO (Member 4): Implement — verify ownership, then delete
         throw new UnsupportedOperationException("TODO: Member 4 — implement deleteNotification()");
     }
 
-    public long getUnreadCount(Long userId) {
+    public long getUnreadCount(String userId) {
         // TODO (Member 4): Implement
         throw new UnsupportedOperationException("TODO: Member 4 — implement getUnreadCount()");
     }

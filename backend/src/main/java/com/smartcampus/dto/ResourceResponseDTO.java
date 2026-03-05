@@ -18,7 +18,7 @@ import java.time.LocalTime;
 @Builder
 public class ResourceResponseDTO {
 
-    private Long id;
+    private String id;
     private String name;
     private ResourceType type;
     private Integer capacity;

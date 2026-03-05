@@ -45,14 +45,14 @@ public class BookingController {
 
     /** GET /api/bookings/{id} — Get booking by ID */
     @GetMapping("/{id}")
-    public ResponseEntity<BookingResponseDTO> getBookingById(@PathVariable Long id) {
+    public ResponseEntity<BookingResponseDTO> getBookingById(@PathVariable String id) {
         // TODO (Member 2): return ResponseEntity.ok(bookingService.getBookingById(id));
         return ResponseEntity.ok().build();
     }
 
     /** PUT /api/bookings/{id}/approve — Approve a booking (admin only) */
     @PutMapping("/{id}/approve")
-    public ResponseEntity<BookingResponseDTO> approveBooking(@PathVariable Long id,
+    public ResponseEntity<BookingResponseDTO> approveBooking(@PathVariable String id,
                                                               @RequestBody BookingApprovalDTO dto) {
         // TODO (Member 2): return ResponseEntity.ok(bookingService.approveBooking(id, dto));
         return ResponseEntity.ok().build();
@@ -60,7 +60,7 @@ public class BookingController {
 
     /** PUT /api/bookings/{id}/reject — Reject a booking (admin only) */
     @PutMapping("/{id}/reject")
-    public ResponseEntity<BookingResponseDTO> rejectBooking(@PathVariable Long id,
+    public ResponseEntity<BookingResponseDTO> rejectBooking(@PathVariable String id,
                                                              @Valid @RequestBody BookingApprovalDTO dto) {
         // TODO (Member 2): return ResponseEntity.ok(bookingService.rejectBooking(id, dto));
         return ResponseEntity.ok().build();
@@ -68,21 +68,21 @@ public class BookingController {
 
     /** PATCH /api/bookings/{id}/cancel — Cancel a booking */
     @PatchMapping("/{id}/cancel")
-    public ResponseEntity<BookingResponseDTO> cancelBooking(@PathVariable Long id) {
+    public ResponseEntity<BookingResponseDTO> cancelBooking(@PathVariable String id) {
         // TODO (Member 2): Extract userId, call bookingService.cancelBooking(id, userId)
         return ResponseEntity.ok().build();
     }
 
     /** DELETE /api/bookings/{id} — Delete a booking (admin only) */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBooking(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteBooking(@PathVariable String id) {
         // TODO (Member 2): bookingService.deleteBooking(id); return ResponseEntity.noContent().build();
         return ResponseEntity.noContent().build();
     }
 
     /** GET /api/bookings/{id}/qr — Get QR code for a booking */
     @GetMapping("/{id}/qr")
-    public ResponseEntity<String> getQRCode(@PathVariable Long id) {
+    public ResponseEntity<String> getQRCode(@PathVariable String id) {
         // TODO (Member 2): return ResponseEntity.ok(bookingService.getQRCode(id));
         return ResponseEntity.ok().build();
     }

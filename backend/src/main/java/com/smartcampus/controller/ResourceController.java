@@ -30,7 +30,7 @@ public class ResourceController {
 
     /** GET /api/resources/{id} — Get resource by ID */
     @GetMapping("/{id}")
-    public ResponseEntity<ResourceResponseDTO> getResourceById(@PathVariable Long id) {
+    public ResponseEntity<ResourceResponseDTO> getResourceById(@PathVariable String id) {
         // TODO (Member 1): return ResponseEntity.ok(resourceService.getResourceById(id));
         return ResponseEntity.ok().build();
     }
@@ -44,7 +44,7 @@ public class ResourceController {
 
     /** PUT /api/resources/{id} — Update an existing resource (admin only) */
     @PutMapping("/{id}")
-    public ResponseEntity<ResourceResponseDTO> updateResource(@PathVariable Long id,
+    public ResponseEntity<ResourceResponseDTO> updateResource(@PathVariable String id,
                                                                @Valid @RequestBody ResourceRequestDTO dto) {
         // TODO (Member 1): return ResponseEntity.ok(resourceService.updateResource(id, dto));
         return ResponseEntity.ok().build();
@@ -52,7 +52,7 @@ public class ResourceController {
 
     /** DELETE /api/resources/{id} — Delete a resource (admin only) */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteResource(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteResource(@PathVariable String id) {
         // TODO (Member 1): resourceService.deleteResource(id); return ResponseEntity.noContent().build();
         return ResponseEntity.noContent().build();
     }
