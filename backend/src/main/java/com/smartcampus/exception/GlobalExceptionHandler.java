@@ -20,6 +20,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+
+    // @ExceptionHandler(BookingConflictException.class)
+    // public ResponseEntity<ErrorResponse> handleConflict(BookingConflictException ex) {
+    //     return ResponseEntity.status(HttpStatus.CONFLICT)
+    //         .body(new ErrorResponse(409, "Conflict", ex.getMessage()));
+    // }
+
     // ── 404 Not Found ──────────────────────────────────────────────────────────
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex) {
