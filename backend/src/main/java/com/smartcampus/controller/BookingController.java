@@ -6,14 +6,17 @@ import com.smartcampus.dto.BookingResponseDTO;
 import com.smartcampus.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
- * Booking REST controller — Member 2 responsibility.
- * Base path: /api/bookings
+ * Booking REST controller — Member 2.
+ * Auth is provided by Member 4's JWT filter.
+ * No X-User-Id header needed — user extracted from SecurityContext.
  */
 @RestController
 @RequestMapping("/api/bookings")
@@ -22,75 +25,80 @@ public class BookingController {
 
     private final BookingService bookingService;
 
-    /** POST /api/bookings — Submit a new booking request */
+    /** POST /api/bookings — Submit a new booking (any logged-in user) */
     @PostMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BookingResponseDTO> createBooking(@Valid @RequestBody BookingRequestDTO dto) {
-        // TODO (Member 2): Extract userId from SecurityContext, call bookingService.createBooking(userId, dto)
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.createBooking(dto));
     }
 
-    /** GET /api/bookings/my — Get current user's bookings */
+    /** GET /api/bookings/my — Get current user's own bookings */
     @GetMapping("/my")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<BookingResponseDTO>> getMyBookings() {
-        // TODO (Member 2): Extract userId from SecurityContext, call bookingService.getMyBookings(userId)
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(bookingService.getMyBookings());
     }
 
     /** GET /api/bookings — Get all bookings (admin only) */
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<BookingResponseDTO>> getAllBookings() {
-        // TODO (Member 2): return ResponseEntity.ok(bookingService.getAllBookings());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
     /** GET /api/bookings/{id} — Get booking by ID */
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BookingResponseDTO> getBookingById(@PathVariable String id) {
-        // TODO (Member 2): return ResponseEntity.ok(bookingService.getBookingById(id));
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(bookingService.getBookingById(id));
     }
 
     /** PUT /api/bookings/{id}/approve — Approve a booking (admin only) */
     @PutMapping("/{id}/approve")
-    public ResponseEntity<BookingResponseDTO> approveBooking(@PathVariable String id,
-                                                              @RequestBody BookingApprovalDTO dto) {
-        // TODO (Member 2): return ResponseEntity.ok(bookingService.approveBooking(id, dto));
-        return ResponseEntity.ok().build();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BookingResponseDTO> approveBooking(
+            @PathVariable String id,
+            @RequestBody(required = false) BookingApprovalDTO dto) {
+        // dto is optional for approve (remarks not mandatory)
+        if (dto == null) dto = new BookingApprovalDTO();
+        return ResponseEntity.ok(bookingService.approveBooking(id, dto));
     }
 
     /** PUT /api/bookings/{id}/reject — Reject a booking (admin only) */
     @PutMapping("/{id}/reject")
-    public ResponseEntity<BookingResponseDTO> rejectBooking(@PathVariable String id,
-                                                             @Valid @RequestBody BookingApprovalDTO dto) {
-        // TODO (Member 2): return ResponseEntity.ok(bookingService.rejectBooking(id, dto));
-        return ResponseEntity.ok().build();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BookingResponseDTO> rejectBooking(
+            @PathVariable String id,
+            @Valid @RequestBody BookingApprovalDTO dto) {
+        return ResponseEntity.ok(bookingService.rejectBooking(id, dto));
     }
 
-    /** PATCH /api/bookings/{id}/cancel — Cancel a booking */
+    /** PATCH /api/bookings/{id}/cancel — Cancel a booking (owner or admin) */
     @PatchMapping("/{id}/cancel")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BookingResponseDTO> cancelBooking(@PathVariable String id) {
-        // TODO (Member 2): Extract userId, call bookingService.cancelBooking(id, userId)
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(bookingService.cancelBooking(id));
     }
 
-    /** DELETE /api/bookings/{id} — Delete a booking (admin only) */
+    /** DELETE /api/bookings/{id} — Delete a booking record (admin only) */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteBooking(@PathVariable String id) {
-        // TODO (Member 2): bookingService.deleteBooking(id); return ResponseEntity.noContent().build();
+        bookingService.deleteBooking(id);
         return ResponseEntity.noContent().build();
     }
 
-    /** GET /api/bookings/{id}/qr — Get QR code for a booking */
+    /** GET /api/bookings/{id}/qr — Get QR code for an approved booking */
     @GetMapping("/{id}/qr")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> getQRCode(@PathVariable String id) {
-        // TODO (Member 2): return ResponseEntity.ok(bookingService.getQRCode(id));
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(bookingService.getQRCode(id));
     }
 
     /** POST /api/bookings/check-in — QR code check-in */
     @PostMapping("/check-in")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BookingResponseDTO> checkIn(@RequestParam String token) {
-        // TODO (Member 2): return ResponseEntity.ok(bookingService.checkIn(token));
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(bookingService.checkIn(token));
     }
 }
