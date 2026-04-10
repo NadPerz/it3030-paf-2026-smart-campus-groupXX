@@ -2,6 +2,7 @@ package com.smartcampus.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,7 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Global exception handler — translates exceptions into structured JSON responses.
+ * Global exception handler — translates exceptions into structured JSON
+ * responses.
  * Shared across all modules.
  */
 @RestControllerAdvice
@@ -40,6 +42,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
         return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage());
+    }
+
+    // ── 403 Access Denied (Member 4) ───────────────────────────────────────────
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden",
+                "You do not have permission to access this resource.");
     }
 
     // ── 400 Validation Errors ──────────────────────────────────────────────────

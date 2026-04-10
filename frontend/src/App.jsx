@@ -1,13 +1,19 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import './App.css';
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import "./App.css";
 
-import { AuthProvider } from './context/AuthContext';
-import Navbar from './components/common/Navbar';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
+import { AuthProvider } from "./context/AuthContext";
+import Navbar from "./components/common/Navbar";
+import ProtectedRoute from "./components/common/ProtectedRoute";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
+import UserManagementPage from "./pages/UserManagementPage";
+import ProfilePage from "./pages/ProfilePage";
+import PendingApprovalPage from "./pages/PendingApprovalPage";
+import AccessDeniedPage from "./pages/AccessDeniedPage";
 
 // Member 1 — Uncomment when pages are ready:
 // import ResourcesPage from './pages/ResourcesPage';
@@ -35,6 +41,33 @@ function App() {
             {/* Public routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
+
+            {/* Member 4 — Auth callback */}
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/pending-approval" element={<PendingApprovalPage />} />
+
+            {/* Member 4 — Admin user management */}
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute adminOnly>
+                  <UserManagementPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Member 4 — User profile */}
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Member 4 — Access denied */}
+            <Route path="/access-denied" element={<AccessDeniedPage />} />
 
             {/* Member 1 — Resources */}
             {/* <Route path="/resources" element={<ResourcesPage />} /> */}
