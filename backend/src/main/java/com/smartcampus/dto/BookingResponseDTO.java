@@ -32,4 +32,5 @@ public class BookingResponseDTO {
     private String adminRemarks;
     private String qrCode;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
