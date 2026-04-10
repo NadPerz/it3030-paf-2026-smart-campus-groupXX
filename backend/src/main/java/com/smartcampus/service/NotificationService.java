@@ -1,6 +1,7 @@
 package com.smartcampus.service;
 
 import com.smartcampus.dto.NotificationDTO;
+import com.smartcampus.model.Booking;
 import com.smartcampus.repository.NotificationRepository;
 import com.smartcampus.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -66,5 +67,13 @@ public class NotificationService {
     public long getUnreadCount(String userId) {
         // TODO (Member 4): Implement
         throw new UnsupportedOperationException("TODO: Member 4 — implement getUnreadCount()");
+    }
+
+    public void notifyBookingApproved(String userId, Booking booking) {
+    // Member 4 will implement
+    }
+    
+    public void notifyBookingRejected(String userId, Booking booking) {
+        // Member 4 will implement
     }
 }
