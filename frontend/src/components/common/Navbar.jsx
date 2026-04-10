@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FiBell } from 'react-icons/fi';
-import { useAuth } from '../../context/AuthContext';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FiBell } from "react-icons/fi";
+import { useAuth } from "../../context/AuthContext";
 
 /**
  * Top navigation bar — shared across all modules.
@@ -13,7 +13,7 @@ function Navbar() {
 
   function handleLogout() {
     logout();
-    navigate('/login');
+    navigate("/login");
   }
 
   return (
@@ -41,14 +41,45 @@ function Navbar() {
         </li> */}
 
         {isAdmin() && (
-          <li><Link to="/admin/bookings">Admin Panel</Link></li>
+          <li>
+            <Link
+              to="/admin/users"
+              style={{ fontSize: "1rem", fontWeight: "600", color: "white" }}
+            >
+              Admin Panel
+            </Link>
+          </li>
         )}
       </ul>
 
       <div className="navbar-user">
         {user ? (
           <>
-            <span>👋 {user.name || user.email}</span>
+            <a
+              href="/profile"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              {user.profilePicture && (
+                <img
+                  src={user.profilePicture}
+                  alt="profile"
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    marginRight: "8px",
+                    verticalAlign: "middle",
+                    cursor: "pointer",
+                  }}
+                />
+              )}
+              <span>👋 {user.name || user.email}</span>
+            </a>
             <button className="btn btn-secondary" onClick={handleLogout}>
               Logout
             </button>
