@@ -1,9 +1,5 @@
 import axios from 'axios';
 
-/**
- * Configured Axios instance for all API calls.
- * Shared across all service modules.
- */
 const api = axios.create({
   baseURL: '/api',
   headers: {
@@ -11,7 +7,6 @@ const api = axios.create({
   },
 });
 
-// ── Request interceptor — attach Bearer token ─────────────────
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -23,16 +18,30 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ── Response interceptor — handle 401 ────────────────────────
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Clear stale session and redirect to login
+    const status = error.response?.status;
+    const data = error.response?.data;
+
+    if (status === 401) {
+      // User deleted — clear everything and go to login
       localStorage.removeItem('user');
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
+
+    if (status === 403) {
+      const currentPath = window.location.pathname;
+      if (data?.status === 'PENDING' && currentPath !== '/pending-approval') {
+        // Don't clear localStorage — keep user info for the page
+        window.location.href = '/pending-approval';
+      } else if (data?.status === 'SUSPENDED' && currentPath !== '/access-denied') {
+        // Don't clear localStorage — keep user info for the page
+        window.location.href = '/access-denied';
+      }
+    }
+
     return Promise.reject(error);
   }
 );
