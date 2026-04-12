@@ -27,6 +27,8 @@ replay_pid*
 target/
 .mvn/
 
+backend/src/main/resources/application.properties
+
 # Node / React
 node_modules/
 build/
