@@ -26,8 +26,13 @@ replay_pid*
 # Maven
 target/
 .mvn/
+<<<<<<< HEAD
+
+backend/src/main/resources/application.properties
+=======
 # Spring Boot config (contains secrets)
 src/main/resources/application.properties
+>>>>>>> 34989d76b78d03033b43aa7bad422808243e5249
 
 # Node / React
 node_modules/

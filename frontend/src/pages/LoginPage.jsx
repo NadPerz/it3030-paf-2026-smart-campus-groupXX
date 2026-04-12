@@ -1,3 +1,17 @@
+<<<<<<< HEAD
+import React from 'react';
+
+/**
+ * Login page — Google OAuth2 sign-in entry point.
+ * Member 4 is responsible for implementing OAuth2 flow.
+ *
+ * The "Sign in with Google" button redirects to Spring Security's OAuth2
+ * authorization endpoint, which handles the Google redirect.
+ */
+function LoginPage() {
+  function handleGoogleLogin() {
+    // Redirect to Spring Boot OAuth2 authorization endpoint
+=======
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -12,10 +26,34 @@ function LoginPage() {
 
   function handleGoogleLogin() {
     setLoading(true);
+>>>>>>> 34989d76b78d03033b43aa7bad422808243e5249
     window.location.href = 'http://localhost:8080/oauth2/authorization/google';
   }
 
   return (
+<<<<<<< HEAD
+    <div className="login-wrapper">
+      <div className="login-card">
+        <h1>🏫 Smart Campus Hub</h1>
+        <p>
+          Manage campus facilities, bookings, and incident tickets.
+          <br />
+          Sign in with your university Google account to get started.
+        </p>
+
+        <button className="btn-google" onClick={handleGoogleLogin}>
+          <img
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+            alt="Google logo"
+            width="20"
+            height="20"
+          />
+          Sign in with Google
+        </button>
+
+        <p style={{ marginTop: '24px', fontSize: '0.8rem', color: '#999' }}>
+          IT3030 PAF Assignment 2026 — SLIIT
+=======
     <div
       className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4"
       style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
@@ -110,6 +148,7 @@ function LoginPage() {
         {/* ── Legal caption ── */}
         <p className="text-[12px] text-[#9CA3AF] mt-6">
           By signing in you accept the Campus Terms of Use.
+>>>>>>> 34989d76b78d03033b43aa7bad422808243e5249
         </p>
       </div>
     </div>
