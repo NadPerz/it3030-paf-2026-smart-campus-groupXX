@@ -272,6 +272,7 @@ function UserManagementPage() {
   const [confirmModal, setConfirmModal] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
 
+  // Close row action menu on outside click
   useEffect(() => {
     function handle(e) {
       if (!e.target.closest('[data-rowmenu]')) setOpenMenuId(null);
