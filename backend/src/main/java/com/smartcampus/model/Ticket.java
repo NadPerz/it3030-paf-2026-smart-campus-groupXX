@@ -12,12 +12,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Document(collection = "tickets")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Ticket {
     @Id
     private String id;
     private String userId;
     private String userName;
+    private String title;
     private String resourceId;
     private String resourceName;
     private String category;
@@ -32,9 +37,26 @@ public class Ticket {
     private String resolutionNotes;
     private String rejectionReason;
     @Builder.Default
+    private List<String> imageUrls = new ArrayList<>();
+    private AiTriageResult aiTriage;
+    private LocalDateTime resolvedAt;
+    @Builder.Default
     private List<TicketAttachment> attachments = new ArrayList<>();
     @CreatedDate
     private LocalDateTime createdAt;
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AiTriageResult {
+        private String suggestedPriority;
+        private String suggestedCategory;
+        private String reasoning;
+        private String recommendedAction;
+        private String estimatedResolutionTime;
+        private LocalDateTime analyzedAt;
+    }
 }

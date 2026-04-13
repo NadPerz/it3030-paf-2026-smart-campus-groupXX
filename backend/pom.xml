@@ -73,6 +73,11 @@
         </dependency>
 
         <!-- Test -->
+        <!-- WebFlux for AI Triage HTTP calls -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

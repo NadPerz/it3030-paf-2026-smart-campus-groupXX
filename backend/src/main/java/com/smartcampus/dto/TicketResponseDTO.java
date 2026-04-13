@@ -2,27 +2,21 @@ package com.smartcampus.dto;
 
 import com.smartcampus.enums.TicketPriority;
 import com.smartcampus.enums.TicketStatus;
+import com.smartcampus.model.Ticket;
 import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * DTO returned in ticket API responses.
- * Member 3 — Incident tickets.
- */
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class TicketResponseDTO {
-
     private String id;
     private String userId;
     private String userName;
-    private String resourceId;
-    private String resourceName;
+    private String title;
     private String category;
     private String description;
     private TicketPriority priority;
@@ -33,6 +27,8 @@ public class TicketResponseDTO {
     private String assignedToName;
     private String resolutionNotes;
     private String rejectionReason;
-    private List<TicketAttachmentDTO> attachments;
+    private List<String> imageUrls;
+    private Ticket.AiTriageResult aiTriage;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
