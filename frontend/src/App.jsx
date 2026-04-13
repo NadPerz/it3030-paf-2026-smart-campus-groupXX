@@ -17,18 +17,14 @@ import PendingApprovalPage from "./pages/PendingApprovalPage";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
-
-// ── These pages must NOT wrap themselves in <AdminLayout> anymore ──
-// The layout is provided by the nested route below.
 import UserManagementPage from "./pages/UserManagementPage";
 
 // Member 1 — Uncomment when pages are ready:
 // import ResourcesPage from './pages/ResourcesPage';
 
-// Member 2 — Uncomment when pages are ready:
-// import BookingPage from './pages/BookingPage';
-// import MyBookingsPage from './pages/MyBookingsPage';
-// import AdminBookingsPage from './pages/AdminBookingsPage';
+// Member 2
+import MyBookingsPage from './pages/MyBookingsPage';
+import AdminBookingsPage from './pages/AdminBookingsPage';
 // import QRCheckInPage from './pages/QRCheckInPage';
 
 // Member 3 — Uncomment when pages are ready:
@@ -57,20 +53,14 @@ function App() {
             {/* <Route path="/resources" element={<ResourcesPage />} /> */}
 
             {/* Member 2 */}
-            {/* <Route path="/bookings" element={<BookingPage />} /> */}
-            {/* <Route path="/bookings/my" element={<MyBookingsPage />} /> */}
+            <Route path="/bookings" element={<ProtectedRoute><MyBookingsPage /></ProtectedRoute>} />
             {/* <Route path="/check-in" element={<QRCheckInPage />} /> */}
 
             {/* Member 3 */}
             {/* <Route path="/tickets" element={<TicketsPage />} /> */}
             {/* <Route path="/tickets/:id" element={<TicketDetailsPage />} /> */}
 
-            {/*
-              ── Admin routes — persistent sidebar layout ──
-              AdminLayout renders once with <Outlet />.
-              Navigating between /admin/* only swaps the content area.
-              All child pages must NOT include <AdminLayout> themselves.
-            */}
+            {/* ── Admin routes — persistent sidebar layout ── */}
             <Route
               path="/admin"
               element={
@@ -85,8 +75,8 @@ function App() {
               {/* Member 1 — add when ready: */}
               {/* <Route path="resources" element={<AdminResourcesPage />} /> */}
 
-              {/* Member 2 — add when ready: */}
-              {/* <Route path="bookings" element={<AdminBookingsPage />} /> */}
+              {/* Member 2 */}
+              <Route path="bookings" element={<AdminBookingsPage />} />
 
               {/* Member 3 — add when ready: */}
               {/* <Route path="tickets" element={<AdminTicketsPage />} /> */}
