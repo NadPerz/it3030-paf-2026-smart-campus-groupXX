@@ -4,6 +4,7 @@ import com.smartcampus.enums.UserRole;
 import com.smartcampus.enums.UserStatus;
 import com.smartcampus.model.User;
 import com.smartcampus.repository.UserRepository;
+import com.smartcampus.service.NotificationService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,6 +27,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -39,6 +41,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String name = oAuth2User.getAttribute("name");
         String picture = oAuth2User.getAttribute("picture");
 
+        // ── Track whether this is a brand-new user ────────────
+        boolean isNewUser = !userRepository.existsByEmail(email);
+
         // Save user to DB on first login, otherwise load existing
         User user = userRepository.findByEmail(email).orElseGet(() -> {
             User newUser = User.builder()
@@ -50,6 +55,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                     .build();
             return userRepository.save(newUser);
         });
+
+        // Notify on first registration only
+        if (isNewUser) {
+            notificationService.notifyNewUserPending(user);
+        }
 
         // Generate JWT token
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
