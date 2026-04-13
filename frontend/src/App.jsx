@@ -7,13 +7,20 @@ import "./App.css";
 import { AuthProvider } from "./context/AuthContext";
 import Navbar from "./components/common/Navbar";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import AdminLayout from "./components/common/AdminLayout";
+
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
-import UserManagementPage from "./pages/UserManagementPage";
 import ProfilePage from "./pages/ProfilePage";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import AdminNotificationsPage from "./pages/AdminNotificationsPage";
+
+// ── These pages must NOT wrap themselves in <AdminLayout> anymore ──
+// The layout is provided by the nested route below.
+import UserManagementPage from "./pages/UserManagementPage";
 
 // Member 1 — Uncomment when pages are ready:
 // import ResourcesPage from './pages/ResourcesPage';
@@ -28,9 +35,6 @@ import AccessDeniedPage from "./pages/AccessDeniedPage";
 // import TicketsPage from './pages/TicketsPage';
 // import TicketDetailsPage from './pages/TicketDetailsPage';
 
-// Member 4 — Uncomment when pages are ready:
-// import NotificationsPage from './pages/NotificationsPage';
-
 function App() {
   return (
     <AuthProvider>
@@ -38,52 +42,56 @@ function App() {
         <Navbar />
         <div className="app-container">
           <Routes>
-            {/* Public routes */}
+            {/* ── Public routes ── */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
-
-            {/* Member 4 — Auth callback */}
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
             <Route path="/pending-approval" element={<PendingApprovalPage />} />
-
-            {/* Member 4 — Admin user management */}
-            <Route
-              path="/admin/users"
-              element={
-                <ProtectedRoute adminOnly>
-                  <UserManagementPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Member 4 — User profile */}
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Member 4 — Access denied */}
             <Route path="/access-denied" element={<AccessDeniedPage />} />
 
-            {/* Member 1 — Resources */}
+            {/* ── User routes ── */}
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+
+            {/* Member 1 */}
             {/* <Route path="/resources" element={<ResourcesPage />} /> */}
 
-            {/* Member 2 — Bookings */}
+            {/* Member 2 */}
             {/* <Route path="/bookings" element={<BookingPage />} /> */}
             {/* <Route path="/bookings/my" element={<MyBookingsPage />} /> */}
-            {/* <Route path="/admin/bookings" element={<AdminBookingsPage />} /> */}
             {/* <Route path="/check-in" element={<QRCheckInPage />} /> */}
 
-            {/* Member 3 — Tickets */}
+            {/* Member 3 */}
             {/* <Route path="/tickets" element={<TicketsPage />} /> */}
             {/* <Route path="/tickets/:id" element={<TicketDetailsPage />} /> */}
 
-            {/* Member 4 — Notifications */}
-            {/* <Route path="/notifications" element={<NotificationsPage />} /> */}
+            {/*
+              ── Admin routes — persistent sidebar layout ──
+              AdminLayout renders once with <Outlet />.
+              Navigating between /admin/* only swaps the content area.
+              All child pages must NOT include <AdminLayout> themselves.
+            */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute adminOnly>
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="users" element={<UserManagementPage />} />
+              <Route path="notifications" element={<AdminNotificationsPage />} />
+
+              {/* Member 1 — add when ready: */}
+              {/* <Route path="resources" element={<AdminResourcesPage />} /> */}
+
+              {/* Member 2 — add when ready: */}
+              {/* <Route path="bookings" element={<AdminBookingsPage />} /> */}
+
+              {/* Member 3 — add when ready: */}
+              {/* <Route path="tickets" element={<AdminTicketsPage />} /> */}
+            </Route>
+
           </Routes>
         </div>
         <ToastContainer position="top-right" autoClose={4000} />
