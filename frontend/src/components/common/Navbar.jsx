@@ -1,15 +1,19 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FiBell } from "react-icons/fi";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import NotificationBell from "../notification/NotificationBell";
 
 /**
- * Top navigation bar — shared across all modules.
- * Member 4 is responsible for hooking in live notification counts.
+ * Global top navbar — shown on all non-admin pages.
+ * Hidden on /admin/* routes because AdminLayout has its own fixed navbar.
  */
 function Navbar() {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Let AdminLayout handle its own navbar on admin pages
+  if (location.pathname.startsWith('/admin')) return null;
 
   function handleLogout() {
     logout();
@@ -32,14 +36,6 @@ function Navbar() {
         {/* Member 3 — uncomment when TicketsPage is ready */}
         {/* <li><Link to="/tickets">Tickets</Link></li> */}
 
-        {/* Member 4 — uncomment when NotificationsPage is ready */}
-        {/* <li>
-          <Link to="/notifications" className="notification-bell">
-            <FiBell />
-            <span className="notification-badge">3</span>
-          </Link>
-        </li> */}
-
         {isAdmin() && (
           <li>
             <Link
@@ -55,6 +51,9 @@ function Navbar() {
       <div className="navbar-user">
         {user ? (
           <>
+            {/* Bell only shown to regular users — admins use the sidebar panel */}
+            {!isAdmin() && <NotificationBell />}
+
             <a
               href="/profile"
               style={{
