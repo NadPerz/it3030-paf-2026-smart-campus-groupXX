@@ -16,17 +16,18 @@ import javax.imageio.ImageIO;
 @Service
 public class QRCodeService {
 
+    private static final String BASE_URL = "http://localhost:3000";
+
     /**
-     * Generates a base64-encoded PNG QR code for the given booking ID.
-     * Called on booking approval.
+     * Generates a base64-encoded PNG QR code.
+     * Encodes a URL so iOS/Android camera opens it directly in browser.
      */
     public String generateQRCode(String bookingId) {
         try {
-            String qrContent = "SMARTCAMPUS:BOOKING:" + bookingId;
+            String qrContent = BASE_URL + "/check-in?bookingId=" + bookingId;
             QRCodeWriter writer = new QRCodeWriter();
-            BitMatrix matrix = writer.encode(qrContent, BarcodeFormat.QR_CODE, 200, 200);
+            BitMatrix matrix = writer.encode(qrContent, BarcodeFormat.QR_CODE, 250, 250);
             BufferedImage image = MatrixToImageWriter.toBufferedImage(matrix);
-
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(image, "PNG", baos);
             return Base64.getEncoder().encodeToString(baos.toByteArray());
@@ -36,13 +37,20 @@ public class QRCodeService {
     }
 
     /**
-     * Verifies a QR token and returns the bookingId embedded in it.
-     * Token format: "SMARTCAMPUS:BOOKING:{bookingId}"
+     * Extracts bookingId from QR token.
+     * Supports URL format: http://localhost:3000/check-in?bookingId=xxx
      */
     public String verifyQRCode(String token) {
-        if (token == null || !token.startsWith("SMARTCAMPUS:BOOKING:")) {
+        if (token == null || token.isBlank()) {
             throw new IllegalArgumentException("Invalid QR token");
         }
-        return token.substring("SMARTCAMPUS:BOOKING:".length());
+        if (token.contains("bookingId=")) {
+            String[] parts = token.split("bookingId=");
+            if (parts.length > 1) return parts[1].split("&")[0];
+        }
+        if (token.startsWith("SMARTCAMPUS:BOOKING:")) {
+            return token.substring("SMARTCAMPUS:BOOKING:".length());
+        }
+        return token;
     }
 }
