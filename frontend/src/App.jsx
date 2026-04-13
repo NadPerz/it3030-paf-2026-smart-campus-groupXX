@@ -25,7 +25,7 @@ import UserManagementPage from "./pages/UserManagementPage";
 // Member 2
 import MyBookingsPage from './pages/MyBookingsPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
-// import QRCheckInPage from './pages/QRCheckInPage';
+import QRCheckInPage from './pages/QRCheckInPage';
 
 // Member 3 — Uncomment when pages are ready:
 // import TicketsPage from './pages/TicketsPage';
@@ -45,6 +45,9 @@ function App() {
             <Route path="/pending-approval" element={<PendingApprovalPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
 
+            {/* ── Member 2 — QR check-in (public so scanned QR works without login) ── */}
+            <Route path="/check-in" element={<QRCheckInPage />} />
+
             {/* ── User routes ── */}
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
@@ -54,7 +57,6 @@ function App() {
 
             {/* Member 2 */}
             <Route path="/bookings" element={<ProtectedRoute><MyBookingsPage /></ProtectedRoute>} />
-            {/* <Route path="/check-in" element={<QRCheckInPage />} /> */}
 
             {/* Member 3 */}
             {/* <Route path="/tickets" element={<TicketsPage />} /> */}
