@@ -2,22 +2,12 @@ package com.smartcampus.dto;
 
 import com.smartcampus.enums.BookingStatus;
 import lombok.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-/**
- * DTO returned in booking API responses.
- * Member 2 — Booking workflow.
- */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class BookingResponseDTO {
-
     private String id;
     private String userId;
     private String userName;
@@ -32,4 +22,5 @@ public class BookingResponseDTO {
     private String adminRemarks;
     private String qrCode;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
