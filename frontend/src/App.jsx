@@ -24,9 +24,10 @@ import AccessDeniedPage from "./pages/AccessDeniedPage";
 // import AdminBookingsPage from './pages/AdminBookingsPage';
 // import QRCheckInPage from './pages/QRCheckInPage';
 
-// Member 3 — Uncomment when pages are ready:
-// import TicketsPage from './pages/TicketsPage';
-// import TicketDetailsPage from './pages/TicketDetailsPage';
+// Member 3 — Ticket pages
+import MyTicketsPage from './pages/MyTicketsPage';
+import CreateTicketPage from './pages/CreateTicketPage';
+import TicketDetailPage from './pages/TicketDetailPage';
 
 // Member 4 — Uncomment when pages are ready:
 // import NotificationsPage from './pages/NotificationsPage';
@@ -78,9 +79,10 @@ function App() {
             {/* <Route path="/admin/bookings" element={<AdminBookingsPage />} /> */}
             {/* <Route path="/check-in" element={<QRCheckInPage />} /> */}
 
-            {/* Member 3 — Tickets */}
-            {/* <Route path="/tickets" element={<TicketsPage />} /> */}
-            {/* <Route path="/tickets/:id" element={<TicketDetailsPage />} /> */}
+            {/* ── MEMBER 3 — TICKET ROUTES ── */}
+            <Route path="/tickets"     element={<MyTicketsPage />} />
+            <Route path="/tickets/new" element={<CreateTicketPage />} />
+            <Route path="/tickets/:id" element={<TicketDetailPage />} />
 
             {/* Member 4 — Notifications */}
             {/* <Route path="/notifications" element={<NotificationsPage />} /> */}

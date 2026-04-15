@@ -31,7 +31,7 @@ function HomePage() {
       description:
         'Report maintenance issues, upload photos, and track technician progress in real time.',
       // link: '/tickets',  // Uncomment when Member 3 builds the page
-      link: '#',
+      link: '/tickets',
       member: 'Member 3',
     },
     {
