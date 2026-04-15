@@ -12,7 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Global exception handler — translates exceptions into structured JSON responses.
+ * Global exception handler — translates exceptions into structured JSON
+ * responses.
  * Shared across all modules.
  */
 @RestControllerAdvice
@@ -64,8 +65,9 @@ public class GlobalExceptionHandler {
     // ── 500 Internal Server Error ──────────────────────────────────────────────
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
+        ex.printStackTrace(); // This will print the real error in the terminal
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error",
-                "An unexpected error occurred. Please try again later.");
+                ex.getMessage() + " — " + ex.getClass().getName());
     }
 
     // ── Helper ─────────────────────────────────────────────────────────────────

@@ -30,20 +30,17 @@ public class TicketController {
 
     // POST /api/tickets — Create ticket
     @PostMapping
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<TicketResponseDTO> createTicket(
-            @Valid @RequestPart("data") TicketRequestDTO dto,
-            @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @AuthenticationPrincipal OAuth2User principal) {
-        String userId = principal.getAttribute("sub");
-        String userName = principal.getAttribute("name");
+            @Valid @RequestBody TicketRequestDTO dto) {
+        // Using hardcoded userId for now — will come from OAuth later
+        String userId = "test-user-001";
+        String userName = "Test User";
         return ResponseEntity.status(201)
-                .body(ticketService.createTicket(userId, userName, dto, files));
+                .body(ticketService.createTicket(userId, userName, dto, null));
     }
 
     // GET /api/tickets — All tickets (Admin only)
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<TicketResponseDTO>> getAllTickets() {
         return ResponseEntity.ok(ticketService.getAllTickets());
     }
