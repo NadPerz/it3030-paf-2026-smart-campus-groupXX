@@ -1,9 +1,12 @@
 package com.smartcampus.security;
 
+import com.smartcampus.enums.AuditAction;
 import com.smartcampus.enums.UserRole;
 import com.smartcampus.enums.UserStatus;
 import com.smartcampus.model.User;
 import com.smartcampus.repository.UserRepository;
+import com.smartcampus.service.AuditLogService;
+import com.smartcampus.service.NotificationService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -17,7 +20,6 @@ import java.io.IOException;
 
 /**
  * Called automatically after Google OAuth2 login succeeds.
- * Saves user to DB (if first login), generates JWT, redirects to frontend.
  * Member 4 responsibility.
  */
 @Component
@@ -26,6 +28,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -39,7 +43,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         String name = oAuth2User.getAttribute("name");
         String picture = oAuth2User.getAttribute("picture");
 
-        // Save user to DB on first login, otherwise load existing
+        boolean isNewUser = !userRepository.existsByEmail(email);
+
         User user = userRepository.findByEmail(email).orElseGet(() -> {
             User newUser = User.builder()
                     .email(email)
@@ -51,10 +56,21 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             return userRepository.save(newUser);
         });
 
-        // Generate JWT token
+        if (isNewUser) {
+            notificationService.notifyNewUserPending(user);
+            auditLogService.log(
+                    AuditAction.NEW_USER_REGISTERED, email, email,
+                    "New user registered via Google OAuth2",
+                    request.getRemoteAddr());
+        } else {
+            auditLogService.log(
+                    AuditAction.LOGIN, email, email,
+                    "User logged in via Google OAuth2",
+                    request.getRemoteAddr());
+        }
+
         String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
 
-        // Redirect to React frontend with token and status
         getRedirectStrategy().sendRedirect(request, response,
                 "http://localhost:3000/auth/callback?token=" + token
                         + "&status=" + user.getStatus().name());
