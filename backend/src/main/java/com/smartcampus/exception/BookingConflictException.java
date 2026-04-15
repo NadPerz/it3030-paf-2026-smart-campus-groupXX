@@ -1,8 +1,10 @@
 package com.smartcampus.exception;
 
-/** Thrown when a booking conflicts with an existing booking — maps to HTTP 409. */
-public class BookingConflictException extends RuntimeException {
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
+@ResponseStatus(HttpStatus.CONFLICT)
+public class BookingConflictException extends RuntimeException {
     public BookingConflictException(String message) {
         super(message);
     }

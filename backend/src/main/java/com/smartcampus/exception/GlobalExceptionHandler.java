@@ -2,6 +2,7 @@ package com.smartcampus.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,6 +19,13 @@ import java.util.Map;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+
+    // @ExceptionHandler(BookingConflictException.class)
+    // public ResponseEntity<ErrorResponse> handleConflict(BookingConflictException ex) {
+    //     return ResponseEntity.status(HttpStatus.CONFLICT)
+    //         .body(new ErrorResponse(409, "Conflict", ex.getMessage()));
+    // }
 
     // ── 404 Not Found ──────────────────────────────────────────────────────────
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -41,6 +49,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
         return buildResponse(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage());
+    }
+
+    // ── 403 Access Denied (Member 4) ───────────────────────────────────────────
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, "Forbidden",
+                "You do not have permission to access this resource.");
     }
 
     // ── 400 Validation Errors ──────────────────────────────────────────────────

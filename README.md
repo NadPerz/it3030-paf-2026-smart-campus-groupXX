@@ -10,9 +10,9 @@ A monolithic layered architecture application using **Spring Boot REST API** + *
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Java 17, Spring Boot 3.2.4, Spring Data JPA, Spring Security, OAuth 2.0 |
+| Backend | Java 17, Spring Boot 3.2.4, Spring Data MongoDB, Spring Security, OAuth 2.0 |
 | Frontend | React 18, React Router v6, Axios |
-| Database | MySQL 8.0 |
+| Database | MongoDB (Atlas or local MongoDB) |
 | CI/CD | GitHub Actions |
 | Architecture | Monolithic layered (Controller → Service → Repository) |
 
@@ -31,7 +31,7 @@ A monolithic layered architecture application using **Spring Boot REST API** + *
 
 ## Project Structure
 
-```
+```text
 smart-campus-hub/
 ├── backend/                    # Spring Boot application
 │   ├── pom.xml
@@ -42,8 +42,8 @@ smart-campus-hub/
 │       ├── dto/                # Request/Response DTOs
 │       ├── enums/              # Shared enumerations
 │       ├── exception/          # Custom exceptions & handler
-│       ├── model/              # JPA entities
-│       ├── repository/         # Spring Data JPA repos
+│       ├── model/              # Domain models / entities
+│       ├── repository/         # Spring Data repositories
 │       └── service/            # Business logic
 ├── frontend/                   # React application
 │   ├── public/
@@ -64,21 +64,31 @@ smart-campus-hub/
 - Java 17+
 - Maven 3.8+
 - Node.js 18+
-- MySQL 8.0
+- MongoDB Atlas account (or local MongoDB)
 
-### Database Setup
-```sql
-CREATE DATABASE smart_campus;
+### Environment Variables
+Create a `.env` file at the project root:
+
+```env
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/smart_campus?retryWrites=true&w=majority&appName=Cluster0
 ```
+
+> Do **not** commit `.env` to GitHub.
 
 ### Backend Setup
 ```bash
 cd backend
-# Update src/main/resources/application.properties with your DB credentials
 mvn clean install
 mvn spring-boot:run
 ```
+
 Backend runs at: `http://localhost:8080`
+
+The backend reads MongoDB from environment variable:
+
+```properties
+spring.data.mongodb.uri=${MONGODB_URI:mongodb://localhost:27017/smart_campus}
+```
 
 ### Frontend Setup
 ```bash
@@ -86,6 +96,7 @@ cd frontend
 npm install
 npm start
 ```
+
 Frontend runs at: `http://localhost:3000`
 
 ---
@@ -114,5 +125,5 @@ See [`docs/api-endpoints.md`](docs/api-endpoints.md) for the full API reference.
 
 ## CI/CD
 
-GitHub Actions workflows run on push/PR to `main` and `develop` branches.
-See `.github/workflows/ci.yml`.
+GitHub Actions workflows run on push/PR to `main` (and any additional configured branches).
+See workflow files under `.github/workflows/`.
