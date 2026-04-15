@@ -5,8 +5,9 @@ import { notificationService } from '../../services/notificationService';
 
 // ── Sidebar menu items ────────────────────────────────────────────────────────
 const menuItems = [
-  { icon: '📊', label: 'Dashboard',               path: '/admin/dashboard',         active: true  },
+  { icon: '📊', label: 'Dashboard',               path: '/admin/dashboard',     active: true  },
   { icon: '👥', label: 'User Management',         path: '/admin/users',         active: true  },
+  { icon: '📋', label: 'Audit Log',               path: '/admin/audit-log',     active: true},
   { icon: '🏛️', label: 'Resource Management',     path: '/admin/resources',     active: true },
   { icon: '📅', label: 'Booking Management',      path: '/admin/bookings',      active: true },
   { icon: '🔧', label: 'Ticket Management',       path: '/admin/tickets',       active: true },

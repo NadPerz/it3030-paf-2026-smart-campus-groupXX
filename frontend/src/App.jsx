@@ -18,14 +18,15 @@ import AccessDeniedPage from "./pages/AccessDeniedPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import UserManagementPage from "./pages/UserManagementPage";
+import AuditLogPage from "./pages/AuditLogPage";
 
 // Member 1 — Uncomment when pages are ready:
 // import ResourcesPage from './pages/ResourcesPage';
 
 // Member 2
-import MyBookingsPage from './pages/MyBookingsPage';
-import AdminBookingsPage from './pages/AdminBookingsPage';
-import QRCheckInPage from './pages/QRCheckInPage';
+import MyBookingsPage from "./pages/MyBookingsPage";
+import AdminBookingsPage from "./pages/AdminBookingsPage";
+import QRCheckInPage from "./pages/QRCheckInPage";
 
 // Member 3 — Uncomment when pages are ready:
 // import TicketsPage from './pages/TicketsPage';
@@ -49,14 +50,35 @@ function App() {
             <Route path="/check-in" element={<QRCheckInPage />} />
 
             {/* ── User routes ── */}
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Member 1 */}
             {/* <Route path="/resources" element={<ResourcesPage />} /> */}
 
             {/* Member 2 */}
-            <Route path="/bookings" element={<ProtectedRoute><MyBookingsPage /></ProtectedRoute>} />
+            <Route
+              path="/bookings"
+              element={
+                <ProtectedRoute>
+                  <MyBookingsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Member 3 */}
             {/* <Route path="/tickets" element={<TicketsPage />} /> */}
@@ -71,8 +93,21 @@ function App() {
                 </ProtectedRoute>
               }
             >
+              {/* Member 4 — Audit Log */}
+              <Route
+                path="audit-log"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <AuditLogPage />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route path="users" element={<UserManagementPage />} />
-              <Route path="notifications" element={<AdminNotificationsPage />} />
+              <Route
+                path="notifications"
+                element={<AdminNotificationsPage />}
+              />
 
               {/* Member 1 — add when ready: */}
               {/* <Route path="resources" element={<AdminResourcesPage />} /> */}
@@ -83,7 +118,6 @@ function App() {
               {/* Member 3 — add when ready: */}
               {/* <Route path="tickets" element={<AdminTicketsPage />} /> */}
             </Route>
-
           </Routes>
         </div>
         <ToastContainer position="top-right" autoClose={4000} />
