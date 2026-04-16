@@ -22,6 +22,8 @@ public class Ticket {
     private String id;
     private String userId;
     private String userName;
+    private String userEmail;
+    private String userRegNo;
     private String title;
     private String resourceId;
     private String resourceName;
@@ -30,6 +32,7 @@ public class Ticket {
     private TicketPriority priority;
     private String location;
     private String contactDetails;
+    private String faculty;
     @Builder.Default
     private TicketStatus status = TicketStatus.OPEN;
     private String assignedToId;

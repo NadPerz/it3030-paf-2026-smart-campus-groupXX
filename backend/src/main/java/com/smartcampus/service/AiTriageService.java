@@ -1,37 +1,20 @@
 package com.smartcampus.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartcampus.model.Ticket;
 import com.smartcampus.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AiTriageService {
 
-    @Value("${anthropic.api.key:YOUR_KEY}")
-    private String apiKey;
-
-    @Value("${anthropic.api.url:https://api.anthropic.com/v1/messages}")
-    private String apiUrl;
-
-    @Value("${anthropic.model:claude-sonnet-4-20250514}")
-    private String model;
-
     private final TicketRepository ticketRepository;
-    private final WebClient.Builder webClientBuilder;
 
     @Async
     public void runTriageAsync(String ticketId) {
@@ -47,62 +30,125 @@ public class AiTriageService {
     }
 
     public Ticket.AiTriageResult analyze(Ticket ticket) {
-        String prompt = "You are a university facilities AI. Analyze this ticket.\n"
-                + "Respond ONLY in JSON — no markdown, no extra text.\n\n"
-                + "Title: " + ticket.getTitle() + "\n"
-                + "Description: " + ticket.getDescription() + "\n"
-                + "Category: " + ticket.getCategory() + "\n"
-                + "Location: " + ticket.getLocation() + "\n"
-                + "Priority: " + ticket.getPriority() + "\n\n"
-                + "Return ONLY this JSON:\n"
-                + "{\"suggestedPriority\":\"LOW|MEDIUM|HIGH|CRITICAL\","
-                + "\"suggestedCategory\":\"ELECTRICAL|PLUMBING|IT|HVAC|GENERAL\","
-                + "\"reasoning\":\"brief reason\","
-                + "\"recommendedAction\":\"next step\","
-                + "\"estimatedResolutionTime\":\"e.g. 2 hours\"}";
+        String title = ticket.getTitle() != null ? ticket.getTitle().toLowerCase() : "";
+        String description = ticket.getDescription() != null ? ticket.getDescription().toLowerCase() : "";
+        String category = ticket.getCategory() != null ? ticket.getCategory() : "GENERAL";
+        String priority = ticket.getPriority() != null ? ticket.getPriority().name() : "MEDIUM";
+        String location = ticket.getLocation() != null ? ticket.getLocation() : "";
+        String combined = title + " " + description;
 
-        Map<String, Object> body = Map.of(
-                "model", model,
-                "max_tokens", 500,
-                "messages", List.of(Map.of("role", "user", "content", prompt)));
+        String suggestedPriority;
+        String suggestedCategory;
+        String recommendedAction;
+        String estimatedTime;
+        String reasoning;
 
-        try {
-            WebClient client = webClientBuilder.build();
-            Map<?, ?> response = client.post().uri(apiUrl)
-                    .header("x-api-key", apiKey)
-                    .header("anthropic-version", "2023-06-01")
-                    .header("Content-Type", "application/json")
-                    .bodyValue(body)
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .timeout(Duration.ofSeconds(30))
-                    .block();
-
-            String text = ((Map<?, ?>) ((List<?>) response.get("content"))
-                    .get(0)).get("text").toString();
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode node = mapper.readTree(text.trim());
-
-            return Ticket.AiTriageResult.builder()
-                    .suggestedPriority(node.get("suggestedPriority").asText())
-                    .suggestedCategory(node.get("suggestedCategory").asText())
-                    .reasoning(node.get("reasoning").asText())
-                    .recommendedAction(node.get("recommendedAction").asText())
-                    .estimatedResolutionTime(node.get("estimatedResolutionTime").asText())
-                    .analyzedAt(LocalDateTime.now())
-                    .build();
-
-        } catch (Exception e) {
-            log.error("AI API call failed: {}", e.getMessage());
-            return Ticket.AiTriageResult.builder()
-                    .suggestedPriority(ticket.getPriority().name())
-                    .suggestedCategory(ticket.getCategory())
-                    .reasoning("AI unavailable — using submitted values")
-                    .recommendedAction("Review ticket manually")
-                    .estimatedResolutionTime("Unknown")
-                    .analyzedAt(LocalDateTime.now())
-                    .build();
+        // ── Determine category from keywords ─────────────────────────────────
+        if (combined.matches(".*(electrical|power|short circuit|socket|wiring|light|electricity|voltage).*")) {
+            suggestedCategory = "ELECTRICAL";
+        } else if (combined.matches(".*(pipe|water|leak|flood|drain|plumbing|tap|toilet|bathroom).*")) {
+            suggestedCategory = "PLUMBING";
+        } else if (combined.matches(
+                ".*(network|internet|wifi|computer|laptop|projector|screen|printer|server|software|system).*")) {
+            suggestedCategory = "IT";
+        } else if (combined.matches(".*(ac|air condition|hvac|fan|ventilation|cooling|heating|temperature).*")) {
+            suggestedCategory = "HVAC";
+        } else {
+            suggestedCategory = category;
         }
+
+        // ── Determine priority from keywords ─────────────────────────────────
+        if (combined.matches(
+                ".*(fire|flood|emergency|danger|unsafe|electrical shock|electrocution|gas leak|collapse|injury|urgent|critical|broken pipe|power outage|no power).*")) {
+            suggestedPriority = "CRITICAL";
+        } else if (combined.matches(
+                ".*(not working|broken|failed|cannot|unable|urgent|affecting|blocked|stopped|no internet|no water|no power).*")) {
+            if (priority.equals("LOW")) {
+                suggestedPriority = "MEDIUM";
+            } else {
+                suggestedPriority = "HIGH";
+            }
+        } else if (combined.matches(".*(slow|intermittent|sometimes|minor|small|little|occasional).*")) {
+            suggestedPriority = "LOW";
+        } else {
+            suggestedPriority = priority;
+        }
+
+        // ── Determine action and time by category ─────────────────────────────
+        switch (suggestedCategory) {
+            case "ELECTRICAL" -> {
+                if (suggestedPriority.equals("CRITICAL")) {
+                    recommendedAction = "Immediately evacuate area and contact emergency electrician. Do not use any electrical switches.";
+                    estimatedTime = "1-2 hours (emergency)";
+                    reasoning = "Electrical emergency detected. Immediate action required to prevent injury or fire hazard.";
+                } else if (suggestedPriority.equals("HIGH")) {
+                    recommendedAction = "Send licensed electrician to inspect wiring and repair faulty connections.";
+                    estimatedTime = "4-8 hours";
+                    reasoning = "Electrical fault detected. Could escalate to safety hazard if not addressed promptly.";
+                } else {
+                    recommendedAction = "Schedule electrician for routine inspection and repair.";
+                    estimatedTime = "1-2 working days";
+                    reasoning = "Minor electrical issue. Schedule during non-peak hours to minimize disruption.";
+                }
+            }
+            case "PLUMBING" -> {
+                if (suggestedPriority.equals("CRITICAL")) {
+                    recommendedAction = "Shut off main water valve immediately. Contact emergency plumber. Clear affected area.";
+                    estimatedTime = "1-3 hours (emergency)";
+                    reasoning = "Severe water leak or flooding detected. Immediate intervention needed to prevent structural damage.";
+                } else if (suggestedPriority.equals("HIGH")) {
+                    recommendedAction = "Send plumber to inspect and fix pipe/drainage issue. Block off affected area.";
+                    estimatedTime = "4-6 hours";
+                    reasoning = "Active plumbing issue that may worsen and cause water damage if left unattended.";
+                } else {
+                    recommendedAction = "Schedule plumber for inspection and repair within the week.";
+                    estimatedTime = "2-3 working days";
+                    reasoning = "Minor plumbing issue. Can be addressed during scheduled maintenance.";
+                }
+            }
+            case "IT" -> {
+                if (suggestedPriority.equals("CRITICAL") || suggestedPriority.equals("HIGH")) {
+                    recommendedAction = "IT technician to diagnose network/hardware issue. Check server room and access points.";
+                    estimatedTime = "2-4 hours";
+                    reasoning = "IT failure affecting multiple users or critical systems. Requires immediate attention.";
+                } else {
+                    recommendedAction = "IT support to remotely diagnose and fix. Schedule on-site visit if needed.";
+                    estimatedTime = "Same day or next working day";
+                    reasoning = "IT issue affecting individual user. Remote support may resolve without on-site visit.";
+                }
+            }
+            case "HVAC" -> {
+                if (suggestedPriority.equals("CRITICAL") || suggestedPriority.equals("HIGH")) {
+                    recommendedAction = "Dispatch HVAC technician immediately. Check refrigerant levels, compressor, and thermostat.";
+                    estimatedTime = "3-5 hours";
+                    reasoning = "HVAC failure in occupied area poses health risk especially in hot weather. Urgent response needed.";
+                } else {
+                    recommendedAction = "Schedule HVAC maintenance. Check filters, vents, and control units.";
+                    estimatedTime = "1-2 working days";
+                    reasoning = "HVAC performance issue. Preventive maintenance will avoid full system failure.";
+                }
+            }
+            default -> {
+                if (suggestedPriority.equals("CRITICAL") || suggestedPriority.equals("HIGH")) {
+                    recommendedAction = "Assign maintenance team immediately. Assess situation on-site and take corrective action.";
+                    estimatedTime = "4-8 hours";
+                    reasoning = "High priority maintenance issue reported at " + location
+                            + ". Requires urgent attention.";
+                } else {
+                    recommendedAction = "Add to maintenance schedule. Assign available technician for inspection and repair.";
+                    estimatedTime = "2-5 working days";
+                    reasoning = "Routine maintenance request. Can be handled during normal working hours.";
+                }
+            }
+        }
+
+        return Ticket.AiTriageResult.builder()
+                .suggestedPriority(suggestedPriority)
+                .suggestedCategory(suggestedCategory)
+                .reasoning(reasoning)
+                .recommendedAction(recommendedAction)
+                .estimatedResolutionTime(estimatedTime)
+                .analyzedAt(LocalDateTime.now())
+                .build();
     }
 }

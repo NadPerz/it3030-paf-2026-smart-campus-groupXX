@@ -12,6 +12,7 @@ import AdminLayout from "./components/common/AdminLayout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
+import VerifyOtpPage from "./pages/VerifyOtpPage";
 import ProfilePage from "./pages/ProfilePage";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
@@ -32,6 +33,8 @@ import QRCheckInPage from "./pages/QRCheckInPage";
 import MyTicketsPage from './pages/MyTicketsPage';
 import CreateTicketPage from './pages/CreateTicketPage';
 import TicketDetailPage from './pages/TicketDetailPage';
+import AdminTicketsPage from './pages/AdminTicketsPage';
+
 
 function App() {
   return (
@@ -44,6 +47,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/verify-otp" element={<VerifyOtpPage />} />
             <Route path="/pending-approval" element={<PendingApprovalPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
 
@@ -85,7 +89,7 @@ function App() {
             <Route path="/tickets"     element={<MyTicketsPage />} />
             <Route path="/tickets/new" element={<CreateTicketPage />} />
             <Route path="/tickets/:id" element={<TicketDetailPage />} />
-
+            
             {/* ── Admin routes — persistent sidebar layout ── */}
             <Route
               path="/admin"
@@ -117,8 +121,10 @@ function App() {
               {/* Member 2 */}
               <Route path="bookings" element={<AdminBookingsPage />} />
 
-              {/* Member 3 — add when ready: */}
-              {/* <Route path="tickets" element={<AdminTicketsPage />} /> */}
+              {/* Member 3 — Tickets */}
+              <Route path="tickets" element={<AdminTicketsPage />} />
+              <Route path="/admin/tickets/:id" element={<TicketDetailPage />} />
+
             </Route>
           </Routes>
         </div>

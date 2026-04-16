@@ -6,6 +6,7 @@ import com.smartcampus.enums.UserStatus;
 import com.smartcampus.model.User;
 import com.smartcampus.repository.UserRepository;
 import com.smartcampus.service.AuditLogService;
+import com.smartcampus.service.EmailService;
 import com.smartcampus.service.NotificationService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,11 +18,9 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Random;
 
-/**
- * Called automatically after Google OAuth2 login succeeds.
- * Member 4 responsibility.
- */
 @Component
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -30,6 +29,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final EmailService emailService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -69,10 +69,17 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                     request.getRemoteAddr());
         }
 
-        String token = jwtService.generateToken(user.getEmail(), user.getRole().name());
+        // Generate OTP and save to user
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        user.setTwoFactorCode(otp);
+        user.setTwoFactorExpiry(LocalDateTime.now().plusMinutes(10));
+        userRepository.save(user);
 
+        // Send OTP email
+        emailService.sendOtp(email, otp);
+
+        // Redirect to frontend OTP page — NO JWT yet
         getRedirectStrategy().sendRedirect(request, response,
-                "http://localhost:3000/auth/callback?token=" + token
-                        + "&status=" + user.getStatus().name());
+                "http://localhost:3000/verify-otp?email=" + email);
     }
 }

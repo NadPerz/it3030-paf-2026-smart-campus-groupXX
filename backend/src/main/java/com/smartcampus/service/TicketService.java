@@ -37,9 +37,7 @@ public class TicketService {
 
     // ── CREATE TICKET ────────────────────────────────────────────────────────
     public TicketResponseDTO createTicket(String userId, String userName,
-            TicketRequestDTO dto,
-            List<MultipartFile> files) {
-        // Save images (max 3)
+            TicketRequestDTO dto, List<MultipartFile> files) {
         List<String> imageUrls = List.of();
         if (files != null && !files.isEmpty()) {
             if (files.size() > 3)
@@ -50,6 +48,8 @@ public class TicketService {
         Ticket ticket = Ticket.builder()
                 .userId(userId)
                 .userName(userName)
+                .userEmail(dto.getUserEmail())
+                .userRegNo(dto.getUserRegNo())
                 .title(dto.getTitle())
                 .category(dto.getCategory())
                 .description(dto.getDescription())
@@ -57,31 +57,29 @@ public class TicketService {
                 .location(dto.getLocation())
                 .contactDetails(dto.getContactDetails())
                 .resourceId(dto.getResourceId())
+                .faculty(dto.getFaculty())
                 .status(TicketStatus.OPEN)
                 .imageUrls(imageUrls)
                 .build();
 
         Ticket saved = ticketRepository.save(ticket);
-
-        // Run AI triage in background
         aiTriageService.runTriageAsync(saved.getId());
-
         return toResponse(saved);
     }
 
-    // ── GET ALL TICKETS (Admin/Technician) ───────────────────────────────────
+    // ── GET ALL TICKETS ──────────────────────────────────────────────────────
     public List<TicketResponseDTO> getAllTickets() {
         return ticketRepository.findAll()
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-    // ── GET MY TICKETS (User) ────────────────────────────────────────────────
+    // ── GET MY TICKETS ───────────────────────────────────────────────────────
     public List<TicketResponseDTO> getMyTickets(String userId) {
         return ticketRepository.findByUserId(userId)
                 .stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-    // ── GET ASSIGNED TICKETS (Technician) ────────────────────────────────────
+    // ── GET ASSIGNED TICKETS ─────────────────────────────────────────────────
     public List<TicketResponseDTO> getAssignedTickets(String techId) {
         return ticketRepository.findByAssignedToId(techId)
                 .stream().map(this::toResponse).collect(Collectors.toList());
@@ -94,14 +92,41 @@ public class TicketService {
         return toResponse(ticket);
     }
 
+    // ── UPDATE TICKET (OPEN only) ────────────────────────────────────────────
+    public TicketResponseDTO updateTicket(String id, TicketRequestDTO dto) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found: " + id));
+
+        if (ticket.getStatus() != TicketStatus.OPEN)
+            throw new RuntimeException("Cannot edit ticket after it has been processed");
+
+        if (dto.getTitle() != null)
+            ticket.setTitle(dto.getTitle());
+        if (dto.getDescription() != null)
+            ticket.setDescription(dto.getDescription());
+        if (dto.getCategory() != null)
+            ticket.setCategory(dto.getCategory());
+        if (dto.getPriority() != null)
+            ticket.setPriority(dto.getPriority());
+        if (dto.getLocation() != null)
+            ticket.setLocation(dto.getLocation());
+        if (dto.getContactDetails() != null)
+            ticket.setContactDetails(dto.getContactDetails());
+        if (dto.getFaculty() != null)
+            ticket.setFaculty(dto.getFaculty());
+        if (dto.getResourceId() != null)
+            ticket.setResourceId(dto.getResourceId());
+
+        return toResponse(ticketRepository.save(ticket));
+    }
+
     // ── UPDATE STATUS ────────────────────────────────────────────────────────
     public TicketResponseDTO updateTicketStatus(String id, TicketStatus newStatus,
             String notes) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found: " + id));
 
-        List<TicketStatus> allowed = TRANSITIONS.getOrDefault(
-                ticket.getStatus(), List.of());
+        List<TicketStatus> allowed = TRANSITIONS.getOrDefault(ticket.getStatus(), List.of());
         if (!allowed.contains(newStatus))
             throw new RuntimeException("Cannot transition from "
                     + ticket.getStatus() + " to " + newStatus);
@@ -136,7 +161,6 @@ public class TicketService {
     // ── ADD COMMENT ──────────────────────────────────────────────────────────
     public TicketCommentDTO addComment(String ticketId, String userId,
             String userName, String content) {
-        // verify ticket exists
         ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found: " + ticketId));
 
@@ -147,8 +171,7 @@ public class TicketService {
                 .content(content)
                 .build();
 
-        TicketComment saved = commentRepository.save(comment);
-        return toCommentResponse(saved);
+        return toCommentResponse(commentRepository.save(comment));
     }
 
     // ── GET COMMENTS ─────────────────────────────────────────────────────────
@@ -167,8 +190,7 @@ public class TicketService {
     }
 
     // ── EDIT COMMENT ─────────────────────────────────────────────────────────
-    public TicketCommentDTO editComment(String commentId, String userId,
-            String content) {
+    public TicketCommentDTO editComment(String commentId, String userId, String content) {
         TicketComment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
         if (!comment.getUserId().equals(userId))
@@ -196,6 +218,9 @@ public class TicketService {
                 .description(t.getDescription())
                 .priority(t.getPriority())
                 .location(t.getLocation())
+                .contactDetails(t.getContactDetails())
+                .faculty(t.getFaculty())
+                .resourceId(t.getResourceId())
                 .status(t.getStatus())
                 .assignedToId(t.getAssignedToId())
                 .assignedToName(t.getAssignedToName())

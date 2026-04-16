@@ -28,6 +28,10 @@ public class TicketRequestDTO {
     @NotBlank(message = "Location is required")
     private String location;
 
+    private String faculty;
     private String resourceId;
     private String contactDetails;
+    private String userName;
+    private String userEmail;
+    private String userRegNo;
 }
