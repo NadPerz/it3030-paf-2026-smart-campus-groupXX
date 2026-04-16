@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiBell, FiCheck, FiTrash2, FiCheckCircle } from 'react-icons/fi';
 import { notificationService } from '../../services/notificationService';
+import { soundService } from '../../services/soundService';
 
 /**
  * NotificationBell — live bell icon with dropdown.
@@ -13,6 +14,7 @@ function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [, setForceUpdate] = useState(0);
   const dropdownRef = useRef(null);
   const sseAbortRef = useRef(null);
   const navigate = useNavigate();
@@ -56,6 +58,7 @@ function NotificationBell() {
                   // New notification arrived — bump count and prepend to list
                   setUnreadCount(prev => prev + 1);
                   setNotifications(prev => [newNotif, ...prev].slice(0, 5));
+                  soundService.playNotificationSound(newNotif.type);
                 } catch (_) {}
               }
             }
@@ -178,6 +181,19 @@ function NotificationBell() {
         {unreadCount > 0 && (
           <span className="nb-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
         )}
+      </button>
+      <button
+        onClick={() => {
+          soundService.toggleSound();
+          setForceUpdate(p => p + 1);
+        }}
+        title={soundService.isSoundEnabled() ? 'Sound on' : 'Sound off'}
+        style={{
+          background: 'none', border: 'none', cursor: 'pointer',
+          fontSize: '14px', opacity: 0.6, padding: '2px 4px',
+        }}
+      >
+        {soundService.isSoundEnabled() ? '🔔' : '🔕'}
       </button>
 
       {open && (
