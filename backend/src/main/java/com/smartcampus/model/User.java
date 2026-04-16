@@ -28,4 +28,8 @@ public class User {
     private UserStatus status = UserStatus.PENDING;
     @CreatedDate
     private LocalDateTime createdAt;
+
+    // 2FA fields
+    private String twoFactorCode;
+    private LocalDateTime twoFactorExpiry;
 }

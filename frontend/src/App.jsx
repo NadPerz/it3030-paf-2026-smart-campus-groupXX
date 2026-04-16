@@ -12,6 +12,7 @@ import AdminLayout from "./components/common/AdminLayout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
+import VerifyOtpPage from "./pages/VerifyOtpPage";
 import ProfilePage from "./pages/ProfilePage";
 import PendingApprovalPage from "./pages/PendingApprovalPage";
 import AccessDeniedPage from "./pages/AccessDeniedPage";
@@ -43,6 +44,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
+            <Route path="/verify-otp" element={<VerifyOtpPage />} />
             <Route path="/pending-approval" element={<PendingApprovalPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
 
