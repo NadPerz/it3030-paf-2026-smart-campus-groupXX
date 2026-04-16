@@ -39,7 +39,7 @@ public class TicketController {
                 .body(ticketService.createTicket(userId, userName, dto, null));
     }
 
-    // GET /api/tickets — All tickets (Admin only)
+    // GET /api/tickets — All tickets
     @GetMapping
     public ResponseEntity<List<TicketResponseDTO>> getAllTickets() {
         return ResponseEntity.ok(ticketService.getAllTickets());
