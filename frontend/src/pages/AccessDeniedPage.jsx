@@ -84,7 +84,7 @@ function AccessDeniedPage() {
         }
 
         .ad-page {
-          height: calc(100vh - 64px);
+          height: calc(100vh - 104px);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -98,7 +98,7 @@ function AccessDeniedPage() {
           width: 100%;
           max-width: 800px;
           height: 100%;
-          max-height: 460px;
+          max-height: 660px;
           border-radius: 12px;
           border: 1px solid #DDE3EC;
           overflow: hidden;
@@ -136,7 +136,7 @@ function AccessDeniedPage() {
           background: #ffffff;
           border-radius: 10px;
           border: 1px solid #E4E9F0;
-          padding: 22px 20px;
+          padding: 62px 20px;
           text-align: center;
           box-shadow: 0 1px 6px rgba(0,0,0,0.05);
         }
@@ -148,7 +148,7 @@ function AccessDeniedPage() {
           border: 1px solid #E4E9F0;
           border-radius: 8px;
           padding: 7px 10px;
-          margin: 10px 0 14px;
+          margin: 20px 0 20px;
           text-align: left;
         }
         .ad-btn-row {
@@ -171,8 +171,8 @@ function AccessDeniedPage() {
           font-family: inherit;
         }
         .ad-btn-primary {
-          background: #1D4ED8;
-          border: 1.5px solid #1D4ED8;
+          background: #1E3A5F;
+          border: 1.5px solid #1E3A5F;
           color: #ffffff;
           box-shadow: 0 1px 3px rgba(29,78,216,0.25);
         }
@@ -305,10 +305,10 @@ function AccessDeniedPage() {
                 </svg>
               </div>
 
-              <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 5px' }}>
+              <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 10px' }}>
                 Access Denied
               </h1>
-              <p style={{ fontSize: '12.5px', color: '#6B7280', lineHeight: '1.55', margin: '0 0 10px' }}>
+              <p style={{ fontSize: '12.5px', color: '#6B7280', lineHeight: '1.55', margin: '0 0 15px' }}>
                 Your account has been suspended by an administrator.
               </p>
 
@@ -382,7 +382,7 @@ function AccessDeniedPage() {
             </div>
 
             {/* Badges */}
-            <div className="ad-badges">
+            {/* <div className="ad-badges">
               {[
                 {
                   label: 'Suspended', sub: 'Contact Admin',
@@ -411,7 +411,7 @@ function AccessDeniedPage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </div> */}
 
             <p style={{ fontSize: '9.5px', color: '#9CA3AF', letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'center', margin: 0 }}>
               © 2024 SLIIT Operations · Smart Campus Initiative
