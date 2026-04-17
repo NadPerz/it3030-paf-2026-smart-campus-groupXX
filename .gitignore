@@ -65,3 +65,5 @@ backend\src\main\resources\application.properties
 # ...existing entries...
 application.properties
 application-*.properties
+*.properties
+!application.properties.template
