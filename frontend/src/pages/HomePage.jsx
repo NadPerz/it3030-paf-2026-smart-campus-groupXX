@@ -22,7 +22,7 @@ function HomePage() {
       description:
         'Book campus resources, track approval status, and check in with QR codes.',
       // link: '/bookings',  // Uncomment when Member 2 builds the page
-      link: '#',
+      link: '/bookings',
       member: 'Member 2',
     },
     {
