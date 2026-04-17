@@ -30,7 +30,7 @@ function LoginPage() {
         }
 
         .lp-page {
-          height: calc(100vh - 64px);
+          height: calc(100vh - 104px);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -45,7 +45,7 @@ function LoginPage() {
           width: 100%;
           max-width: 800px;
           height: 100%;
-          max-height: 460px;
+          max-height: 660px;
           border-radius: 12px;
           border: 1px solid #DDE3EC;
           overflow: hidden;
@@ -72,7 +72,7 @@ function LoginPage() {
           align-items: center;
           justify-content: center;
           padding: 20px 18px;
-          gap: 11px;
+          gap: 30px;
           min-width: 0;
         }
         .lp-form-card {
@@ -170,7 +170,7 @@ function LoginPage() {
                 </svg>
               </div>
 
-              <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 5px' }}>
+              <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#111827', margin: '0 0 15px' }}>
                 Smart Campus Hub
               </h1>
               <p style={{ fontSize: '12.5px', color: '#6B7280', lineHeight: '1.55', margin: '0 0 15px' }}>
