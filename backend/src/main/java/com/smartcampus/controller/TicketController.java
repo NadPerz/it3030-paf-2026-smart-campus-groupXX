@@ -114,7 +114,7 @@ public class TicketController {
             @PathVariable String id,
             @RequestBody Map<String, String> body) {
         return ResponseEntity.ok(
-                ticketService.assignTicket(id, body.get("technicianId")));
+                ticketService.assignTicket(id, body.get("technicianId"), body.get("technicianName")));
     }
 
     // PATCH /api/tickets/{id}/reject — Reject ticket
