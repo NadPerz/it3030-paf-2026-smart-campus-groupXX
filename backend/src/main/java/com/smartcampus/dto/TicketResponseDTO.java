@@ -16,12 +16,16 @@ public class TicketResponseDTO {
     private String id;
     private String userId;
     private String userName;
+    private String userEmail;
+    private String userRegNo;
     private String title;
     private String category;
     private String description;
     private TicketPriority priority;
     private String location;
     private String contactDetails;
+    private String faculty;
+    private String resourceId;
     private TicketStatus status;
     private String assignedToId;
     private String assignedToName;
@@ -31,4 +35,8 @@ public class TicketResponseDTO {
     private Ticket.AiTriageResult aiTriage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime assignedAt;
+    private LocalDateTime resolvedAt;
+    private String timeToFirstResponse;
+    private String timeToResolution;
 }
