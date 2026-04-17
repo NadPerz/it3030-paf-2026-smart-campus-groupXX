@@ -30,11 +30,11 @@ import AdminBookingsPage from "./pages/AdminBookingsPage";
 import QRCheckInPage from "./pages/QRCheckInPage";
 
 // Member 3 — Ticket pages
-import MyTicketsPage from './pages/MyTicketsPage';
-import CreateTicketPage from './pages/CreateTicketPage';
-import TicketDetailPage from './pages/TicketDetailPage';
-import AdminTicketsPage from './pages/AdminTicketsPage';
-
+import MyTicketsPage from "./pages/MyTicketsPage";
+import CreateTicketPage from "./pages/CreateTicketPage";
+import TicketDetailPage from "./pages/TicketDetailPage";
+import AdminTicketsPage from "./pages/AdminTicketsPage";
+import TechnicianDashboard from "./pages/TechnicianDashboard";
 
 function App() {
   return (
@@ -86,10 +86,39 @@ function App() {
             />
 
             {/* ── MEMBER 3 — TICKET ROUTES ── */}
-            <Route path="/tickets"     element={<MyTicketsPage />} />
-            <Route path="/tickets/new" element={<CreateTicketPage />} />
-            <Route path="/tickets/:id" element={<TicketDetailPage />} />
-            
+            <Route
+              path="/tickets"
+              element={
+                <ProtectedRoute>
+                  <MyTicketsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets/new"
+              element={
+                <ProtectedRoute>
+                  <CreateTicketPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets/:id"
+              element={
+                <ProtectedRoute>
+                  <TicketDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technician"
+              element={
+                <ProtectedRoute>
+                  <TechnicianDashboard />
+                </ProtectedRoute>
+              }
+            />
+
             {/* ── Admin routes — persistent sidebar layout ── */}
             <Route
               path="/admin"
@@ -122,9 +151,22 @@ function App() {
               <Route path="bookings" element={<AdminBookingsPage />} />
 
               {/* Member 3 — Tickets */}
-              <Route path="tickets" element={<AdminTicketsPage />} />
-              <Route path="/admin/tickets/:id" element={<TicketDetailPage />} />
-
+              <Route
+                path="tickets"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <AdminTicketsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/tickets/:id"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <TicketDetailPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
           </Routes>
         </div>
