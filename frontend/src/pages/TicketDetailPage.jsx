@@ -2,26 +2,40 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ticketService } from "../services/ticketService";
 import { useAuth } from "../context/AuthContext.jsx";
+import CommentSection from "../components/common/CommentSection.jsx";
 
 const STATUS_COLORS = {
   OPEN: "#004085",
-  IN_PROGRESS: "#856404",
-  RESOLVED: "#155724",
-  CLOSED: "#383d41",
-  REJECTED: "#721c24",
+  IN_PROGRESS: "#92400e",
+  RESOLVED: "#14532d",
+  CLOSED: "#374151",
+  REJECTED: "#7f1d1d",
 };
 const STATUS_BG = {
-  OPEN: "#cce5ff",
-  IN_PROGRESS: "#fff3cd",
-  RESOLVED: "#d4edda",
-  CLOSED: "#e2e3e5",
-  REJECTED: "#f8d7da",
+  OPEN: "#dbeafe",
+  IN_PROGRESS: "#fef3c7",
+  RESOLVED: "#dcfce7",
+  CLOSED: "#f3f4f6",
+  REJECTED: "#fee2e2",
 };
-const PRIORITY_COLORS = {
-  LOW: "#2e7d32",
-  MEDIUM: "#f57c00",
-  HIGH: "#e53935",
-  CRITICAL: "#b71c1c",
+const STATUS_DOT = {
+  OPEN: "#3b82f6",
+  IN_PROGRESS: "#f59e0b",
+  RESOLVED: "#22c55e",
+  CLOSED: "#9ca3af",
+  REJECTED: "#ef4444",
+};
+const PRIORITY_COLOR = {
+  LOW: "#16a34a",
+  MEDIUM: "#d97706",
+  HIGH: "#dc2626",
+  CRITICAL: "#7c3aed",
+};
+const PRIORITY_BG = {
+  LOW: "#dcfce7",
+  MEDIUM: "#fef3c7",
+  HIGH: "#fee2e2",
+  CRITICAL: "#ede9fe",
 };
 const STEPS = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
 const FACULTIES = [
@@ -33,6 +47,47 @@ const FACULTIES = [
   "Faculty of Graduate Studies & Research",
 ];
 
+const Chip = ({ label, status, type = "status" }) => {
+  const c =
+    type === "status"
+      ? {
+          bg: STATUS_BG[status],
+          color: STATUS_COLORS[status],
+          dot: STATUS_DOT[status],
+        }
+      : {
+          bg: PRIORITY_BG[status],
+          color: PRIORITY_COLOR[status],
+          dot: PRIORITY_COLOR[status],
+        };
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "5px",
+        background: c.bg,
+        color: c.color,
+        padding: "4px 12px",
+        borderRadius: "20px",
+        fontSize: "0.72rem",
+        fontWeight: "700",
+      }}
+    >
+      <span
+        style={{
+          width: "6px",
+          height: "6px",
+          borderRadius: "50%",
+          background: c.dot,
+          flexShrink: 0,
+        }}
+      />
+      {label}
+    </span>
+  );
+};
+
 export default function TicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -40,14 +95,11 @@ export default function TicketDetailPage() {
 
   const [ticket, setTicket] = useState(null);
   const [comments, setComments] = useState([]);
-  const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [aiOpen, setAiOpen] = useState(false);
   const [triageLoading, setTriageLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [editingCommentId, setEditingCommentId] = useState(null);
-  const [editingContent, setEditingContent] = useState("");
   const [editForm, setEditForm] = useState({
     title: "",
     category: "",
@@ -86,43 +138,8 @@ export default function TicketDetailPage() {
     load();
   }, [id]);
 
-  const sendComment = async () => {
-    if (!comment.trim()) return;
-    try {
-      await ticketService.addComment(id, {
-        content: comment,
-        userName: user?.name || "Anonymous",
-      });
-      setComment("");
-      ticketService.getComments(id).then((r) => setComments(r.data));
-    } catch {
-      alert("Failed to add comment");
-    }
-  };
-
-  const saveEditComment = async (commentId) => {
-    if (!editingContent.trim()) return;
-    try {
-      await ticketService.editComment(id, commentId, {
-        content: editingContent,
-      });
-      setEditingCommentId(null);
-      setEditingContent("");
-      ticketService.getComments(id).then((r) => setComments(r.data));
-    } catch {
-      alert("Failed to edit comment");
-    }
-  };
-
-  const deleteComment = async (commentId) => {
-    if (!window.confirm("Delete this comment?")) return;
-    try {
-      await ticketService.deleteComment(id, commentId);
-      ticketService.getComments(id).then((r) => setComments(r.data));
-    } catch {
-      alert("Failed to delete comment");
-    }
-  };
+  const refreshComments = () =>
+    ticketService.getComments(id).then((r) => setComments(r.data));
 
   const runTriage = async () => {
     setTriageLoading(true);
@@ -154,7 +171,7 @@ export default function TicketDetailPage() {
 
   const handleDelete = async () => {
     if (ticket.status !== "OPEN") {
-      alert("Cannot delete — ticket has already been processed by admin");
+      alert("Cannot delete — ticket has already been processed");
       return;
     }
     if (!window.confirm("Delete this ticket? This cannot be undone.")) return;
@@ -168,13 +185,14 @@ export default function TicketDetailPage() {
 
   const fs = {
     width: "100%",
-    padding: "8px 12px",
-    border: "1px solid #ddd",
-    borderRadius: "6px",
-    fontSize: "0.9rem",
+    padding: "9px 12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "8px",
+    fontSize: "0.875rem",
     outline: "none",
     boxSizing: "border-box",
     fontFamily: "inherit",
+    background: "#fafafa",
   };
 
   if (loading)
@@ -194,16 +212,34 @@ export default function TicketDetailPage() {
   const canEdit = ticket.status === "OPEN";
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-      {/* Top bar */}
+    <div
+      style={{
+        maxWidth: "1000px",
+        margin: "0 auto",
+        padding: "24px 28px",
+        fontFamily: "Inter, system-ui, sans-serif",
+      }}
+    >
+      {/* TOP BAR */}
       <div style={{ marginBottom: "24px" }}>
         <button
-          className="btn btn-secondary"
           onClick={() => navigate(-1)}
-          style={{ marginBottom: "12px", fontSize: "0.85rem" }}
+          style={{
+            background: "white",
+            border: "1px solid #e5e7eb",
+            borderRadius: "8px",
+            padding: "7px 14px",
+            fontSize: "0.82rem",
+            fontWeight: "600",
+            color: "#374151",
+            cursor: "pointer",
+            marginBottom: "16px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}
         >
           ← Back
         </button>
+
         <div
           style={{
             display: "flex",
@@ -214,48 +250,36 @@ export default function TicketDetailPage() {
           }}
         >
           <div>
-            <h2 style={{ margin: 0, color: "#1a73e8", fontSize: "1.4rem" }}>
-              {ticket.title}
-            </h2>
-            <div
+            <h2
               style={{
-                display: "flex",
-                gap: "8px",
-                marginTop: "8px",
-                flexWrap: "wrap",
+                margin: "0 0 10px",
+                color: "#0f172a",
+                fontSize: "1.4rem",
+                fontWeight: "800",
+                letterSpacing: "-0.02em",
               }}
             >
+              {ticket.title}
+            </h2>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <Chip
+                label={ticket.status?.replace("_", " ")}
+                status={ticket.status}
+                type="status"
+              />
+              <Chip
+                label={ticket.priority}
+                status={ticket.priority}
+                type="priority"
+              />
               <span
                 style={{
-                  background: STATUS_BG[ticket.status],
-                  color: STATUS_COLORS[ticket.status],
-                  padding: "3px 10px",
-                  borderRadius: "12px",
-                  fontSize: "0.78rem",
+                  background: "#f1f5f9",
+                  color: "#475569",
+                  padding: "4px 12px",
+                  borderRadius: "20px",
+                  fontSize: "0.72rem",
                   fontWeight: "600",
-                }}
-              >
-                {ticket.status?.replace("_", " ")}
-              </span>
-              <span
-                style={{
-                  background: "#f1f3f4",
-                  color: PRIORITY_COLORS[ticket.priority],
-                  padding: "3px 10px",
-                  borderRadius: "12px",
-                  fontSize: "0.78rem",
-                  fontWeight: "600",
-                }}
-              >
-                ● {ticket.priority}
-              </span>
-              <span
-                style={{
-                  background: "#f1f3f4",
-                  color: "#555",
-                  padding: "3px 10px",
-                  borderRadius: "12px",
-                  fontSize: "0.78rem",
                 }}
               >
                 {ticket.category}
@@ -266,72 +290,109 @@ export default function TicketDetailPage() {
             {canEdit ? (
               <>
                 <button
-                  className="btn btn-secondary"
-                  style={{ fontSize: "0.85rem" }}
                   onClick={() => setEditing(!editing)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    fontSize: "0.82rem",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    border: "1px solid #e5e7eb",
+                    background: editing ? "#f3f4f6" : "white",
+                    color: "#374151",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                  }}
                 >
-                  {editing ? "✕ Cancel Edit" : "✏️ Edit"}
+                  {editing ? "✕ Cancel" : "✏️ Edit"}
                 </button>
                 <button
-                  className="btn btn-danger"
-                  style={{ fontSize: "0.85rem" }}
                   onClick={handleDelete}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "8px",
+                    fontSize: "0.82rem",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    border: "none",
+                    background: "#dc2626",
+                    color: "white",
+                    boxShadow: "0 2px 8px rgba(220,38,38,0.25)",
+                  }}
                 >
-                  🗑️ Delete
+                  Delete
                 </button>
               </>
             ) : (
               <span
                 style={{
                   fontSize: "0.8rem",
-                  color: "#999",
+                  color: "#94a3b8",
                   fontStyle: "italic",
                   alignSelf: "center",
+                  background: "#f8fafc",
+                  padding: "8px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid #f0f0f0",
                 }}
               >
-                Locked — ticket is {ticket.status?.replace("_", " ")}
+                Locked — {ticket.status?.replace("_", " ")}
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Rejected banner */}
+      {/* REJECTED BANNER */}
       {ticket.status === "REJECTED" && (
         <div
           style={{
-            background: "#f8d7da",
-            border: "1px solid #f5c6cb",
-            borderRadius: "8px",
-            padding: "16px",
+            background: "#fee2e2",
+            border: "1px solid #fecaca",
+            borderRadius: "12px",
+            padding: "16px 20px",
             marginBottom: "20px",
+            borderLeft: "4px solid #dc2626",
           }}
         >
-          <p style={{ margin: 0, fontWeight: "600", color: "#721c24" }}>
-            ❌ Ticket Rejected
-          </p>
           <p
-            style={{ margin: "4px 0 0", color: "#721c24", fontSize: "0.9rem" }}
+            style={{
+              margin: "0 0 4px",
+              fontWeight: "700",
+              color: "#7f1d1d",
+              fontSize: "0.9rem",
+            }}
           >
+            Ticket Rejected
+          </p>
+          <p style={{ margin: 0, color: "#991b1b", fontSize: "0.875rem" }}>
             {ticket.rejectionReason}
           </p>
         </div>
       )}
 
-      {/* Status timeline */}
-      <div className="card" style={{ marginBottom: "20px" }}>
-        <p
+      {/* STATUS TIMELINE */}
+      <div
+        style={{
+          background: "white",
+          border: "1px solid #f0f0f0",
+          borderRadius: "14px",
+          padding: "20px 24px",
+          marginBottom: "20px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        }}
+      >
+        <div
           style={{
-            margin: "0 0 16px",
-            fontSize: "0.8rem",
-            fontWeight: "600",
-            color: "#666",
+            fontSize: "0.7rem",
+            fontWeight: "700",
+            color: "#94a3b8",
             textTransform: "uppercase",
-            letterSpacing: "0.05em",
+            letterSpacing: "0.08em",
+            marginBottom: "20px",
           }}
         >
           Status Timeline
-        </p>
+        </div>
         <div style={{ display: "flex", alignItems: "center" }}>
           {STEPS.map((step, i) => (
             <div
@@ -347,28 +408,37 @@ export default function TicketDetailPage() {
               >
                 <div
                   style={{
-                    width: "32px",
-                    height: "32px",
+                    width: "36px",
+                    height: "36px",
                     borderRadius: "50%",
-                    background: i <= currentStep ? "#1a73e8" : "#e0e0e0",
-                    color: i <= currentStep ? "white" : "#999",
+                    background:
+                      i <= currentStep
+                        ? "#22c55e"
+                        : i === currentStep
+                          ? "#1d4ed8"
+                          : "#f1f5f9",
+                    color: i <= currentStep ? "white" : "#94a3b8",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "0.8rem",
+                    fontSize: "0.82rem",
                     fontWeight: "700",
+                    boxShadow:
+                      i <= currentStep
+                        ? "0 2px 8px rgba(29,78,216,0.2)"
+                        : "none",
                   }}
                 >
-                  {i < currentStep ? "✓" : i + 1}
+                  {i <= currentStep ? "✓" : i + 1}
                 </div>
                 <span
                   style={{
-                    fontSize: "0.7rem",
-                    marginTop: "4px",
+                    fontSize: "0.68rem",
+                    marginTop: "6px",
                     textAlign: "center",
-                    width: "60px",
-                    color: i <= currentStep ? "#1a73e8" : "#999",
-                    fontWeight: i <= currentStep ? "600" : "400",
+                    width: "70px",
+                    color: i <= currentStep ? "#1d4ed8" : "#94a3b8",
+                    fontWeight: i <= currentStep ? "700" : "400",
                   }}
                 >
                   {step.replace("_", " ")}
@@ -380,17 +450,21 @@ export default function TicketDetailPage() {
                     flex: 1,
                     height: "3px",
                     margin: "0 4px",
-                    marginBottom: "18px",
-                    background: i < currentStep ? "#1a73e8" : "#e0e0e0",
+                    marginBottom: "22px",
+                    background:
+                      i < currentStep
+                        ? "linear-gradient(90deg,#22c55e,#1d4ed8)"
+                        : "#f1f5f9",
                     borderRadius: "2px",
                   }}
-                ></div>
+                />
               )}
             </div>
           ))}
         </div>
       </div>
 
+      {/* MAIN GRID */}
       <div
         style={{
           display: "grid",
@@ -399,25 +473,49 @@ export default function TicketDetailPage() {
         }}
       >
         {/* LEFT */}
-        <div>
-          <div className="card" style={{ marginBottom: "20px" }}>
-            <p
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Details / Edit */}
+          <div
+            style={{
+              background: "white",
+              border: "1px solid #f0f0f0",
+              borderRadius: "14px",
+              overflow: "hidden",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+            }}
+          >
+            <div
               style={{
-                margin: "0 0 16px",
-                fontSize: "0.8rem",
-                fontWeight: "600",
-                color: "#666",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
+                padding: "16px 24px",
+                borderBottom: "1px solid #f8fafc",
+                background: "#f8fafc",
               }}
             >
-              {editing ? "✏️ Editing Ticket" : "Ticket Details"}
-            </p>
+              <span
+                style={{
+                  fontSize: "0.7rem",
+                  fontWeight: "700",
+                  color: "#94a3b8",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                {editing ? "Edit Ticket" : "Ticket Details"}
+              </span>
+            </div>
 
             {editing ? (
-              <div>
+              <div style={{ padding: "20px 24px" }}>
                 <div className="form-group">
-                  <label>Title *</label>
+                  <label
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: "600",
+                      color: "#374151",
+                    }}
+                  >
+                    Title *
+                  </label>
                   <input
                     style={fs}
                     value={editForm.title}
@@ -434,7 +532,15 @@ export default function TicketDetailPage() {
                   }}
                 >
                   <div className="form-group">
-                    <label>Category</label>
+                    <label
+                      style={{
+                        fontSize: "0.82rem",
+                        fontWeight: "600",
+                        color: "#374151",
+                      }}
+                    >
+                      Category
+                    </label>
                     <select
                       style={fs}
                       value={editForm.category}
@@ -452,11 +558,19 @@ export default function TicketDetailPage() {
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>Priority</label>
+                    <label
+                      style={{
+                        fontSize: "0.82rem",
+                        fontWeight: "600",
+                        color: "#374151",
+                      }}
+                    >
+                      Priority
+                    </label>
                     <select
                       style={{
                         ...fs,
-                        borderLeft: `4px solid ${PRIORITY_COLORS[editForm.priority]}`,
+                        borderLeft: `3px solid ${PRIORITY_COLOR[editForm.priority]}`,
                       }}
                       value={editForm.priority}
                       onChange={(e) =>
@@ -472,7 +586,15 @@ export default function TicketDetailPage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label>Location</label>
+                  <label
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: "600",
+                      color: "#374151",
+                    }}
+                  >
+                    Location
+                  </label>
                   <input
                     style={fs}
                     value={editForm.location}
@@ -482,7 +604,15 @@ export default function TicketDetailPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Faculty / School</label>
+                  <label
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: "600",
+                      color: "#374151",
+                    }}
+                  >
+                    Faculty
+                  </label>
                   <select
                     style={fs}
                     value={editForm.faculty}
@@ -498,71 +628,125 @@ export default function TicketDetailPage() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>Resource ID</label>
-                  <input
-                    style={fs}
-                    value={editForm.resourceId}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, resourceId: e.target.value })
-                    }
-                    placeholder="e.g. PROJ-001"
-                  />
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "12px",
+                  }}
+                >
+                  <div className="form-group">
+                    <label
+                      style={{
+                        fontSize: "0.82rem",
+                        fontWeight: "600",
+                        color: "#374151",
+                      }}
+                    >
+                      Resource ID
+                    </label>
+                    <input
+                      style={fs}
+                      value={editForm.resourceId}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, resourceId: e.target.value })
+                      }
+                      placeholder="e.g. LAB-A3"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label
+                      style={{
+                        fontSize: "0.82rem",
+                        fontWeight: "600",
+                        color: "#374151",
+                      }}
+                    >
+                      Contact
+                    </label>
+                    <input
+                      style={fs}
+                      value={editForm.contactDetails}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          contactDetails: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
                 </div>
                 <div className="form-group">
-                  <label>Contact</label>
-                  <input
-                    style={fs}
-                    value={editForm.contactDetails}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        contactDetails: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Description</label>
+                  <label
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: "600",
+                      color: "#374151",
+                    }}
+                  >
+                    Description
+                  </label>
                   <textarea
-                    style={{ ...fs, minHeight: "120px", resize: "vertical" }}
+                    style={{ ...fs, minHeight: "100px", resize: "vertical" }}
                     value={editForm.description}
                     onChange={(e) =>
                       setEditForm({ ...editForm, description: e.target.value })
                     }
                   />
                 </div>
-                <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
                   <button
-                    className="btn btn-primary"
                     onClick={handleUpdate}
                     disabled={saveLoading}
+                    style={{
+                      padding: "9px 20px",
+                      borderRadius: "8px",
+                      border: "none",
+                      background: "linear-gradient(135deg,#1e40af,#3b82f6)",
+                      color: "white",
+                      fontWeight: "700",
+                      cursor: "pointer",
+                      fontSize: "0.875rem",
+                      boxShadow: "0 2px 8px rgba(29,78,216,0.3)",
+                    }}
                   >
-                    {saveLoading ? "Saving..." : "✓ Save Changes"}
+                    {saveLoading ? "Saving..." : "Save Changes"}
                   </button>
                   <button
-                    className="btn btn-secondary"
                     onClick={() => setEditing(false)}
+                    style={{
+                      padding: "9px 20px",
+                      borderRadius: "8px",
+                      fontWeight: "600",
+                      border: "1px solid #e5e7eb",
+                      background: "white",
+                      color: "#374151",
+                      cursor: "pointer",
+                      fontSize: "0.875rem",
+                    }}
                   >
                     Cancel
                   </button>
                 </div>
               </div>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <tbody>
+              <div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "1px",
+                    background: "#f8fafc",
+                  }}
+                >
                   {[
-                    ["Title", ticket.title],
-                    ["Description", ticket.description],
-                    ["Category", ticket.category],
-                    ["Priority", ticket.priority],
-                    ["Location", ticket.location],
-                    ["Faculty", ticket.faculty || "—"],
-                    ["Resource ID", ticket.resourceId || "—"],
                     ["Reporter", ticket.userName || "—"],
                     ["Email", ticket.userEmail || "—"],
                     ["Reg. Number", ticket.userRegNo || "—"],
                     ["Contact", ticket.contactDetails || "—"],
+                    ["Faculty", ticket.faculty || "—"],
+                    ["Resource ID", ticket.resourceId || "—"],
+                    ["Location", ticket.location || "—"],
                     ["Technician", ticket.assignedToName || "Unassigned"],
                     [
                       "Created",
@@ -576,44 +760,85 @@ export default function TicketDetailPage() {
                         ? new Date(ticket.updatedAt).toLocaleString()
                         : "—",
                     ],
+                    [
+                      "First Response",
+                      ticket.timeToFirstResponse
+                        ? `⏱ ${ticket.timeToFirstResponse}`
+                        : ticket.status === "OPEN"
+                          ? "⏳ Pending"
+                          : "—",
+                    ],
+                    [
+                      "Resolution Time",
+                      ticket.timeToResolution
+                        ? `✓ ${ticket.timeToResolution}`
+                        : ["IN_PROGRESS", "OPEN"].includes(ticket.status)
+                          ? "⏳ In progress"
+                          : "—",
+                    ],
                   ].map(([k, v]) => (
-                    <tr key={k} style={{ borderBottom: "1px solid #f5f5f5" }}>
-                      <td
+                    <div
+                      key={k}
+                      style={{
+                        background: "white",
+                        padding: "12px 20px",
+                        borderBottom: "1px solid #f8fafc",
+                      }}
+                    >
+                      <div
                         style={{
-                          padding: "8px 12px",
-                          color: "#666",
-                          fontSize: "0.85rem",
-                          fontWeight: "600",
-                          width: "130px",
-                          verticalAlign: "top",
+                          fontSize: "0.68rem",
+                          fontWeight: "700",
+                          color: "#94a3b8",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          marginBottom: "3px",
                         }}
                       >
                         {k}
-                      </td>
-                      <td
+                      </div>
+                      <div
                         style={{
-                          padding: "8px 12px",
-                          fontSize: "0.9rem",
-                          color: "#222",
+                          fontSize: "0.85rem",
+                          color: "#0f172a",
+                          fontWeight: "500",
                         }}
                       >
-                        {k === "Priority" ? (
-                          <span
-                            style={{
-                              color: PRIORITY_COLORS[v],
-                              fontWeight: "600",
-                            }}
-                          >
-                            ● {v}
-                          </span>
-                        ) : (
-                          v
-                        )}
-                      </td>
-                    </tr>
+                        {v}
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+                <div
+                  style={{
+                    padding: "16px 20px",
+                    borderTop: "1px solid #f8fafc",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.68rem",
+                      fontWeight: "700",
+                      color: "#94a3b8",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    Description
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "0.875rem",
+                      color: "#374151",
+                      lineHeight: "1.6",
+                    }}
+                  >
+                    {ticket.description}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
 
@@ -621,229 +846,100 @@ export default function TicketDetailPage() {
           {ticket.resolutionNotes && (
             <div
               style={{
-                background: "#d4edda",
-                border: "1px solid #c3e6cb",
-                borderRadius: "8px",
-                padding: "16px",
-                marginBottom: "20px",
+                background: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                borderRadius: "12px",
+                padding: "16px 20px",
+                borderLeft: "4px solid #22c55e",
               }}
             >
               <p
                 style={{
                   margin: "0 0 6px",
-                  fontSize: "0.8rem",
-                  fontWeight: "600",
-                  color: "#155724",
+                  fontSize: "0.7rem",
+                  fontWeight: "700",
+                  color: "#14532d",
                   textTransform: "uppercase",
+                  letterSpacing: "0.05em",
                 }}
               >
-                ✓ Resolution Notes
+                Resolution Notes
               </p>
-              <p style={{ margin: 0, color: "#155724", fontSize: "0.9rem" }}>
+              <p
+                style={{
+                  margin: 0,
+                  color: "#166534",
+                  fontSize: "0.875rem",
+                  lineHeight: "1.5",
+                }}
+              >
                 {ticket.resolutionNotes}
               </p>
             </div>
           )}
 
-          {/* Comments */}
-          <div className="card">
-            <p
-              style={{
-                margin: "0 0 16px",
-                fontSize: "0.8rem",
-                fontWeight: "600",
-                color: "#666",
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-              }}
-            >
-              Comments ({comments.length})
-            </p>
-            {comments.length === 0 && (
-              <p
-                style={{
-                  color: "#999",
-                  fontSize: "0.9rem",
-                  textAlign: "center",
-                  padding: "20px 0",
-                }}
-              >
-                No comments yet
-              </p>
-            )}
-            <div style={{ marginBottom: "16px" }}>
-              {comments.map((c) => (
-                <div
-                  key={c.id}
-                  style={{
-                    background: "#f8f9fa",
-                    borderRadius: "8px",
-                    padding: "12px",
-                    marginBottom: "10px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: "0.85rem",
-                        fontWeight: "600",
-                        color: "#333",
-                      }}
-                    >
-                      {c.userName}
-                    </span>
-                    <span style={{ fontSize: "0.78rem", color: "#999" }}>
-                      {c.createdAt
-                        ? new Date(c.createdAt).toLocaleString()
-                        : ""}
-                    </span>
-                  </div>
-                  {editingCommentId === c.id ? (
-                    <div>
-                      <textarea
-                        value={editingContent}
-                        onChange={(e) => setEditingContent(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "8px",
-                          border: "1px solid #ddd",
-                          borderRadius: "6px",
-                          fontSize: "0.85rem",
-                          resize: "vertical",
-                          fontFamily: "inherit",
-                          boxSizing: "border-box",
-                        }}
-                        rows={2}
-                      />
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "6px",
-                          marginTop: "6px",
-                        }}
-                      >
-                        <button
-                          className="btn btn-primary"
-                          style={{ fontSize: "0.78rem", padding: "4px 12px" }}
-                          onClick={() => saveEditComment(c.id)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="btn btn-secondary"
-                          style={{ fontSize: "0.78rem", padding: "4px 12px" }}
-                          onClick={() => {
-                            setEditingCommentId(null);
-                            setEditingContent("");
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <p
-                        style={{
-                          margin: "0 0 8px",
-                          fontSize: "0.9rem",
-                          color: "#555",
-                        }}
-                      >
-                        {c.content}
-                      </p>
-                      <div style={{ display: "flex", gap: "12px" }}>
-                        <button
-                          onClick={() => {
-                            setEditingCommentId(c.id);
-                            setEditingContent(c.content);
-                          }}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "#1a73e8",
-                            fontSize: "0.78rem",
-                            cursor: "pointer",
-                            padding: 0,
-                          }}
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          onClick={() => deleteComment(c.id)}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            color: "#e53935",
-                            fontSize: "0.78rem",
-                            cursor: "pointer",
-                            padding: 0,
-                          }}
-                        >
-                          🗑️ Delete
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <input
-                className="form-control"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendComment()}
-                placeholder="Add a comment..."
-                style={{ flex: 1 }}
-              />
-              <button className="btn btn-primary" onClick={sendComment}>
-                Send
-              </button>
-            </div>
+          {/* ── COMMENTS — using shared CommentSection ── */}
+          <div
+            style={{
+              background: "white",
+              border: "1px solid #f0f0f0",
+              borderRadius: "14px",
+              padding: "20px 24px",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+            }}
+          >
+            <CommentSection
+              ticketId={id}
+              comments={comments}
+              onRefresh={refreshComments}
+            />
           </div>
         </div>
 
-        {/* RIGHT panel */}
-        <div>
+        {/* RIGHT */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* AI Triage */}
           <div
             style={{
-              background: "#e8f0fe",
-              border: "1px solid #c5d8f8",
-              borderRadius: "8px",
-              padding: "16px",
-              marginBottom: "16px",
+              background: "white",
+              border: "1px solid #f0f0f0",
+              borderRadius: "14px",
+              overflow: "hidden",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
             }}
           >
             <div
               style={{
+                padding: "14px 20px",
+                borderBottom: "1px solid #f8fafc",
+                background: "linear-gradient(135deg,#1e40af,#3b82f6)",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                marginBottom: "12px",
               }}
             >
-              <p
+              <span
                 style={{
-                  margin: 0,
-                  fontSize: "0.9rem",
-                  fontWeight: "600",
-                  color: "#1a73e8",
+                  fontSize: "0.82rem",
+                  fontWeight: "700",
+                  color: "white",
                 }}
               >
-                🤖 AI Triage Analysis
-              </p>
+                AI Triage Analysis
+              </span>
               <button
-                className="btn btn-primary"
-                style={{ fontSize: "0.78rem", padding: "4px 10px" }}
                 onClick={runTriage}
                 disabled={triageLoading}
+                style={{
+                  background: "rgba(255,255,255,0.2)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "4px 12px",
+                  fontSize: "0.72rem",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                }}
               >
                 {triageLoading
                   ? "..."
@@ -852,145 +948,185 @@ export default function TicketDetailPage() {
                     : "Run Analysis"}
               </button>
             </div>
-            {triageLoading && (
-              <div style={{ textAlign: "center", padding: "16px" }}>
+            <div style={{ padding: "16px 20px" }}>
+              {triageLoading && (
+                <div style={{ textAlign: "center", padding: "20px" }}>
+                  <div
+                    className="spinner"
+                    style={{ width: "28px", height: "28px", margin: "0 auto" }}
+                  />
+                  <p
+                    style={{
+                      color: "#1d4ed8",
+                      fontSize: "0.82rem",
+                      marginTop: "8px",
+                    }}
+                  >
+                    Analyzing...
+                  </p>
+                </div>
+              )}
+              {ticket.aiTriage && !triageLoading && (
                 <div
-                  className="spinner"
-                  style={{ width: "28px", height: "28px", margin: "0 auto" }}
-                ></div>
-                <p
                   style={{
-                    color: "#1a73e8",
-                    fontSize: "0.82rem",
-                    marginTop: "8px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
                   }}
                 >
-                  Analyzing with AI...
-                </p>
-              </div>
-            )}
-            {ticket.aiTriage && !triageLoading && (
-              <div>
-                <div style={{ marginBottom: "10px" }}>
-                  <p
+                  {[
+                    {
+                      label: "Suggested Priority",
+                      value: ticket.aiTriage.suggestedPriority,
+                      render: (v) => (
+                        <Chip label={v} status={v} type="priority" />
+                      ),
+                    },
+                    {
+                      label: "Est. Resolution",
+                      value: ticket.aiTriage.estimatedResolutionTime,
+                      render: (v) => (
+                        <span
+                          style={{
+                            fontSize: "0.85rem",
+                            fontWeight: "700",
+                            color: "#0f172a",
+                          }}
+                        >
+                          {v}
+                        </span>
+                      ),
+                    },
+                    {
+                      label: "Recommended Action",
+                      value: ticket.aiTriage.recommendedAction,
+                      render: (v) => (
+                        <span
+                          style={{
+                            fontSize: "0.82rem",
+                            color: "#374151",
+                            lineHeight: "1.4",
+                          }}
+                        >
+                          {v}
+                        </span>
+                      ),
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      style={{
+                        background: "#f8fafc",
+                        borderRadius: "8px",
+                        padding: "10px 12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "0.68rem",
+                          fontWeight: "700",
+                          color: "#94a3b8",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                          marginBottom: "4px",
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                      {item.render(item.value)}
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => setAiOpen(!aiOpen)}
                     style={{
-                      margin: "0 0 4px",
+                      background: "none",
+                      border: "none",
+                      color: "#3b82f6",
                       fontSize: "0.78rem",
-                      color: "#5a7fc7",
-                    }}
-                  >
-                    Suggested Priority
-                  </p>
-                  <span
-                    style={{
-                      background: "#fff",
-                      padding: "3px 10px",
-                      borderRadius: "12px",
-                      fontSize: "0.8rem",
+                      cursor: "pointer",
                       fontWeight: "600",
-                      color: PRIORITY_COLORS[ticket.aiTriage.suggestedPriority],
+                      textAlign: "left",
+                      padding: 0,
                     }}
                   >
-                    ● {ticket.aiTriage.suggestedPriority}
-                  </span>
+                    {aiOpen ? "Hide" : "Show"} AI reasoning
+                  </button>
+                  {aiOpen && (
+                    <div
+                      style={{
+                        background: "#eff6ff",
+                        border: "1px solid #bfdbfe",
+                        borderRadius: "8px",
+                        padding: "12px",
+                        fontSize: "0.82rem",
+                        color: "#1e40af",
+                        fontStyle: "italic",
+                        lineHeight: "1.5",
+                      }}
+                    >
+                      {ticket.aiTriage.reasoning}
+                    </div>
+                  )}
                 </div>
-                <div style={{ marginBottom: "10px" }}>
-                  <p
-                    style={{
-                      margin: "0 0 4px",
-                      fontSize: "0.78rem",
-                      color: "#5a7fc7",
-                    }}
-                  >
-                    Est. Resolution Time
-                  </p>
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "0.88rem",
-                      fontWeight: "600",
-                      color: "#1a73e8",
-                    }}
-                  >
-                    {ticket.aiTriage.estimatedResolutionTime}
-                  </p>
-                </div>
-                <div style={{ marginBottom: "10px" }}>
-                  <p
-                    style={{
-                      margin: "0 0 4px",
-                      fontSize: "0.78rem",
-                      color: "#5a7fc7",
-                    }}
-                  >
-                    Recommended Action
-                  </p>
-                  <p
-                    style={{ margin: 0, fontSize: "0.85rem", color: "#1a73e8" }}
-                  >
-                    {ticket.aiTriage.recommendedAction}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setAiOpen(!aiOpen)}
+              )}
+              {!ticket.aiTriage && !triageLoading && (
+                <div
                   style={{
-                    background: "none",
-                    border: "none",
-                    color: "#1a73e8",
-                    fontSize: "0.8rem",
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                    padding: 0,
+                    textAlign: "center",
+                    padding: "20px",
+                    color: "#94a3b8",
                   }}
                 >
-                  {aiOpen ? "Hide" : "Show"} AI reasoning
-                </button>
-                {aiOpen && (
                   <div
                     style={{
-                      background: "white",
-                      borderRadius: "6px",
-                      padding: "10px",
-                      marginTop: "8px",
-                      fontSize: "0.82rem",
-                      color: "#555",
-                      fontStyle: "italic",
+                      fontSize: "2rem",
+                      marginBottom: "8px",
+                      opacity: 0.5,
                     }}
                   >
-                    {ticket.aiTriage.reasoning}
+                    🤖
                   </div>
-                )}
-              </div>
-            )}
-            {!ticket.aiTriage && !triageLoading && (
-              <p
-                style={{
-                  color: "#5a7fc7",
-                  fontSize: "0.85rem",
-                  textAlign: "center",
-                  margin: 0,
-                }}
-              >
-                Click Run Analysis to get AI suggestions
-              </p>
-            )}
+                  <div style={{ fontSize: "0.85rem" }}>
+                    Click Run Analysis to get AI suggestions
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Attachments */}
           {ticket.imageUrls && ticket.imageUrls.length > 0 && (
-            <div className="card">
-              <p
-                style={{
-                  margin: "0 0 12px",
-                  fontSize: "0.8rem",
-                  fontWeight: "600",
-                  color: "#666",
-                  textTransform: "uppercase",
-                }}
-              >
-                Attachments ({ticket.imageUrls.length})
-              </p>
+            <div
+              style={{
+                background: "white",
+                border: "1px solid #f0f0f0",
+                borderRadius: "14px",
+                overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              }}
+            >
               <div
                 style={{
+                  padding: "14px 20px",
+                  borderBottom: "1px solid #f8fafc",
+                  background: "#f8fafc",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    fontWeight: "700",
+                    color: "#94a3b8",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Attachments ({ticket.imageUrls.length})
+                </span>
+              </div>
+              <div
+                style={{
+                  padding: "14px 20px",
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
                   gap: "8px",
@@ -1005,11 +1141,16 @@ export default function TicketDetailPage() {
                       width: "100%",
                       height: "90px",
                       objectFit: "cover",
-                      borderRadius: "6px",
-                      border: "1px solid #ddd",
+                      borderRadius: "8px",
+                      border: "1px solid #f0f0f0",
                       cursor: "pointer",
+                      transition: "opacity 0.15s",
                     }}
                     onClick={() => window.open(url, "_blank")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.opacity = "0.85")
+                    }
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
                   />
                 ))}
               </div>
