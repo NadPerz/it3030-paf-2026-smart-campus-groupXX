@@ -117,7 +117,7 @@ function VerifyOtpPage() {
           padding: 0;
         }
         .otp-page {
-          height: calc(100vh - 64px);
+          height: calc(100vh - 104px);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -131,7 +131,7 @@ function VerifyOtpPage() {
           width: 100%;
           max-width: 800px;
           height: 100%;
-          max-height: 460px;
+          max-height: 660px;
           border-radius: 12px;
           border: 1px solid #DDE3EC;
           overflow: hidden;

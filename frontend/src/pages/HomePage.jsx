@@ -976,56 +976,60 @@ function HomePage() {
       </section>
 
       {/* ── STATS BAR ── */}
-      <section
+     {/* ── STATS BAR ── */}
+<section
+  style={{
+    padding: "clamp(20px, 4vw, 40px) clamp(20px, 5vw, 80px)",
+  }}
+>
+  <div
+    style={{
+      maxWidth: "1200px",
+      margin: "0 auto",
+      background: "#0F172A",
+      borderRadius: "20px",
+      padding: "36px 20px",
+      display: "grid",
+      gridTemplateColumns: "repeat(4, 1fr)",
+      gap: "0",
+      boxShadow: "0 20px 50px rgba(15,23,42,0.15)",
+    }}
+  >
+    {STATS.map((s, i) => (
+      <div
+        key={s.label}
         style={{
-          background: "#0F172A",
-          padding: "40px clamp(20px, 5vw, 80px)",
+          textAlign: "center",
+          padding: "8px 20px",
+          borderRight:
+            i < STATS.length - 1 ? "1px solid #1E293B" : "none",
         }}
       >
         <div
           style={{
-            maxWidth: "1200px",
-            margin: "0 auto",
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "0",
+            fontSize: "clamp(2rem, 3.5vw, 2.8rem)",
+            fontWeight: "700",
+            color: "white",
+            fontFamily: "'DM Serif Display', serif",
+            lineHeight: 1,
           }}
         >
-          {STATS.map((s, i) => (
-            <div
-              key={s.label}
-              style={{
-                textAlign: "center",
-                padding: "8px 20px",
-                borderRight:
-                  i < STATS.length - 1 ? "1px solid #1E293B" : "none",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "clamp(2rem, 3.5vw, 2.8rem)",
-                  fontWeight: "700",
-                  color: "white",
-                  fontFamily: "'DM Serif Display', serif",
-                  lineHeight: 1,
-                }}
-              >
-                <AnimatedCounter target={s.value} suffix={s.suffix} />
-              </div>
-              <div
-                style={{
-                  fontSize: "13px",
-                  color: "#64748B",
-                  marginTop: "6px",
-                  fontWeight: "500",
-                }}
-              >
-                {s.label}
-              </div>
-            </div>
-          ))}
+          <AnimatedCounter target={s.value} suffix={s.suffix} />
         </div>
-      </section>
+        <div
+          style={{
+            fontSize: "13px",
+            color: "#64748B",
+            marginTop: "6px",
+            fontWeight: "500",
+          }}
+        >
+          {s.label}
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
 
       {/* ── FEATURES ── */}
       <section
