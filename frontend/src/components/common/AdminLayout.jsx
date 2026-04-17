@@ -3,23 +3,82 @@ import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { notificationService } from '../../services/notificationService';
 
+// ── SVG Icons ─────────────────────────────────────────────────────────────────
+const IconDashboard = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+  </svg>
+);
+
+const IconUsers = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <circle cx="9" cy="7" r="4" />
+    <path d="M1 21c0-4 3.6-7 8-7s8 3 8 7" />
+    <path d="M17 11c2.2.5 4 2.5 4 5" />
+    <circle cx="17" cy="7" r="3" />
+  </svg>
+);
+
+const IconAuditLog = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="8" y1="13" x2="16" y2="13" />
+    <line x1="8" y1="17" x2="16" y2="17" />
+    <line x1="8" y1="9" x2="10" y2="9" />
+  </svg>
+);
+
+const IconResource = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+const IconBooking = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
+const IconTicket = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path d="M2 10a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8z" />
+    <path d="M6 10V6a6 6 0 0 1 12 0v4" />
+  </svg>
+);
+
+const IconNotification = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+);
+
 // ── Sidebar menu items ────────────────────────────────────────────────────────
 const menuItems = [
-  { icon: '📊', label: 'Dashboard',               path: '/admin/dashboard',     active: true  },
-  { icon: '👥', label: 'User Management',         path: '/admin/users',         active: true  },
-  { icon: '📋', label: 'Audit Log',               path: '/admin/audit-log',     active: true},
-  { icon: '🏛️', label: 'Resource Management',     path: '/admin/resources',     active: true },
-  { icon: '📅', label: 'Booking Management',      path: '/admin/bookings',      active: true },
-  { icon: '🔧', label: 'Ticket Management',       path: '/admin/tickets',       active: true },
-  { icon: '🔔', label: 'Notification Management', path: '/admin/notifications', active: true  },
+  { icon: <IconDashboard />,    label: 'Dashboard',               path: '/admin/dashboard',     active: true  },
+  { icon: <IconUsers />,        label: 'User Management',         path: '/admin/users',         active: true  },
+  { icon: <IconAuditLog />,     label: 'Audit Log',               path: '/admin/audit-log',     active: true  },
+  { icon: <IconResource />,     label: 'Resource Management',     path: '/admin/resources',     active: true  },
+  { icon: <IconBooking />,      label: 'Booking Management',      path: '/admin/bookings',      active: true  },
+  { icon: <IconTicket />,       label: 'Ticket Management',       path: '/admin/tickets',       active: true  },
+  { icon: <IconNotification />, label: 'Notification Management', path: '/admin/notifications', active: true  },
 ];
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
-const NAV_BG       = '#1a2235';   // top navbar background
-const SIDEBAR_BG   = '#1e2a3b';   // sidebar background (same navy family)
-const NAV_HEIGHT   = 72;          // px
-const SIDEBAR_W    = 260;         // px
-const ACCENT_COLOR = '#4f8ef7';   // active left bar + active text
+const NAV_BG       = '#1a2235';
+const SIDEBAR_BG   = '#1e2a3b';
+const NAV_HEIGHT   = 72;
+const SIDEBAR_W    = 260;
+const ACCENT_COLOR = '#4f8ef7';
 
 function AdminLayout() {
   const location  = useLocation();
@@ -27,7 +86,6 @@ function AdminLayout() {
   const { user, logout } = useAuth();
   const [notifCount, setNotifCount] = useState(0);
 
-  // Live unread count for sidebar badge
   useEffect(() => {
     async function fetchCount() {
       try {
@@ -106,7 +164,7 @@ function AdminLayout() {
               </div>
             )}
             <span style={{ fontSize: '14px', fontWeight: '500', color: 'rgba(255,255,255,0.85)' }}>
-              👋 {user?.name || user?.email}
+               {user?.name || user?.email}
             </span>
           </Link>
 
@@ -152,7 +210,6 @@ function AdminLayout() {
         display: 'flex',
         flexDirection: 'column',
         zIndex: 100,
-        // Padding top pushes content below the navbar
         paddingTop: `${NAV_HEIGHT}px`,
       }}>
 
@@ -242,7 +299,14 @@ function AdminLayout() {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0 }}>
-                    <span style={{ fontSize: '1rem', flexShrink: 0 }}>{item.icon}</span>
+                    <span style={{
+                      flexShrink: 0,
+                      color: isActive ? ACCENT_COLOR : 'rgba(255,255,255,0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}>
+                      {item.icon}
+                    </span>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.label}
                     </span>
@@ -274,7 +338,9 @@ function AdminLayout() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '11px', minWidth: 0 }}>
-                  <span style={{ fontSize: '1rem', flexShrink: 0 }}>{item.icon}</span>
+                  <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                    {item.icon}
+                  </span>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {item.label}
                   </span>
