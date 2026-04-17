@@ -91,12 +91,16 @@ export function AuthProvider({ children }) {
   }, [user]);
 
   function login(userData) {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-    if (userData.token) {
-      localStorage.setItem('token', userData.token);
-    }
+  setUser(userData);
+  localStorage.setItem('user', JSON.stringify(userData));
+  if (userData.token) {
+    localStorage.setItem('token', userData.token);
   }
+  // Redirect admin straight to the admin panel
+  if (userData.role === 'ADMIN') {
+    window.location.href = '/admin/users';
+  }
+}
 
   function logout() {
     setUser(null);
