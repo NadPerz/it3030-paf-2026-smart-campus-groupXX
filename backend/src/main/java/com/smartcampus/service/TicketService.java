@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,24 @@ public class TicketService {
             TicketStatus.OPEN, List.of(TicketStatus.IN_PROGRESS, TicketStatus.REJECTED),
             TicketStatus.IN_PROGRESS, List.of(TicketStatus.RESOLVED, TicketStatus.REJECTED),
             TicketStatus.RESOLVED, List.of(TicketStatus.CLOSED));
+
+    // ── DURATION FORMATTER ───────────────────────────────────────────────────
+    private String formatDuration(LocalDateTime from, LocalDateTime to) {
+        if (from == null || to == null)
+            return null;
+        long minutes = Duration.between(from, to).toMinutes();
+        if (minutes < 1)
+            return "< 1m";
+        if (minutes < 60)
+            return minutes + "m";
+        long hours = minutes / 60;
+        long mins = minutes % 60;
+        if (hours < 24)
+            return hours + "h " + mins + "m";
+        long days = hours / 24;
+        long hrs = hours % 24;
+        return days + "d " + hrs + "h";
+    }
 
     // ── CREATE TICKET ────────────────────────────────────────────────────────
     public TicketResponseDTO createTicket(String userId, String userName,
@@ -64,6 +83,16 @@ public class TicketService {
 
         Ticket saved = ticketRepository.save(ticket);
         aiTriageService.runTriageAsync(saved.getId());
+
+        // Notify user ticket created
+        /*
+         * try {
+         * notificationService.notifyTicketCreated(userId, saved);
+         * } catch (Exception e) {
+         * // Non-critical
+         * }
+         */
+
         return toResponse(saved);
     }
 
@@ -137,7 +166,18 @@ public class TicketService {
         if (newStatus == TicketStatus.RESOLVED)
             ticket.setResolvedAt(LocalDateTime.now());
 
-        return toResponse(ticketRepository.save(ticket));
+        Ticket saved = ticketRepository.save(ticket);
+
+        // Notify user of status change
+        /*
+         * try {
+         * notificationService.notifyTicketStatusChanged(ticket.getUserId(), saved);
+         * } catch (Exception e) {
+         * // Non-critical
+         * }
+         */
+
+        return toResponse(saved);
     }
 
     // ── REJECT TICKET ────────────────────────────────────────────────────────
@@ -146,22 +186,55 @@ public class TicketService {
                 .orElseThrow(() -> new RuntimeException("Ticket not found: " + id));
         ticket.setStatus(TicketStatus.REJECTED);
         ticket.setRejectionReason(reason);
-        return toResponse(ticketRepository.save(ticket));
+
+        Ticket saved = ticketRepository.save(ticket);
+
+        // Notify user ticket rejected
+        /*
+         * try {
+         * notificationService.notifyTicketRejected(ticket.getUserId(), saved);
+         * } catch (Exception e) {
+         * // Non-critical
+         * }
+         */
+
+        return toResponse(saved);
     }
 
     // ── ASSIGN TECHNICIAN ────────────────────────────────────────────────────
-    public TicketResponseDTO assignTicket(String ticketId, String technicianId) {
+    public TicketResponseDTO assignTicket(String ticketId, String technicianId, String technicianName) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found: " + ticketId));
         ticket.setAssignedToId(technicianId);
+        ticket.setAssignedToName(technicianName);
+        ticket.setAssignedAt(LocalDateTime.now()); // ← SLA: first response time
         ticket.setStatus(TicketStatus.IN_PROGRESS);
-        return toResponse(ticketRepository.save(ticket));
+
+        Ticket saved = ticketRepository.save(ticket);
+
+        // Notify user ticket assigned
+        /*
+         * try {
+         * notificationService.notifyTicketAssigned(ticket.getUserId(), saved);
+         * } catch (Exception e) {
+         * // Non-critical
+         * }
+         * 
+         * // Notify technician of new assignment
+         * try {
+         * notificationService.notifyTechnicianAssigned(technicianId, saved);
+         * } catch (Exception e) {
+         * // Non-critical
+         * }
+         */
+
+        return toResponse(saved);
     }
 
     // ── ADD COMMENT ──────────────────────────────────────────────────────────
     public TicketCommentDTO addComment(String ticketId, String userId,
             String userName, String content) {
-        ticketRepository.findById(ticketId)
+        Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found: " + ticketId));
 
         TicketComment comment = TicketComment.builder()
@@ -171,7 +244,20 @@ public class TicketService {
                 .content(content)
                 .build();
 
-        return toCommentResponse(commentRepository.save(comment));
+        TicketComment saved = commentRepository.save(comment);
+
+        // Notify ticket owner of new comment (if commenter is not the owner)
+        /*
+         * try {
+         * if (!userId.equals(ticket.getUserId())) {
+         * notificationService.notifyNewComment(ticket.getUserId(), ticket, userName);
+         * }
+         * } catch (Exception e) {
+         * // Non-critical
+         * }
+         */
+
+        return toCommentResponse(saved);
     }
 
     // ── GET COMMENTS ─────────────────────────────────────────────────────────
@@ -213,6 +299,8 @@ public class TicketService {
                 .id(t.getId())
                 .userId(t.getUserId())
                 .userName(t.getUserName())
+                .userEmail(t.getUserEmail())
+                .userRegNo(t.getUserRegNo())
                 .title(t.getTitle())
                 .category(t.getCategory())
                 .description(t.getDescription())
@@ -224,12 +312,17 @@ public class TicketService {
                 .status(t.getStatus())
                 .assignedToId(t.getAssignedToId())
                 .assignedToName(t.getAssignedToName())
+                .assignedAt(t.getAssignedAt())
                 .resolutionNotes(t.getResolutionNotes())
                 .rejectionReason(t.getRejectionReason())
                 .imageUrls(t.getImageUrls())
                 .aiTriage(t.getAiTriage())
+                .resolvedAt(t.getResolvedAt())
                 .createdAt(t.getCreatedAt())
                 .updatedAt(t.getUpdatedAt())
+                // ── SLA timers ──
+                .timeToFirstResponse(formatDuration(t.getCreatedAt(), t.getAssignedAt()))
+                .timeToResolution(formatDuration(t.getCreatedAt(), t.getResolvedAt()))
                 .build();
     }
 
