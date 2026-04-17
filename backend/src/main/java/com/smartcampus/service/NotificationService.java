@@ -340,7 +340,7 @@ public class NotificationService {
                 }
         }
 
-        // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
         // BOOKING NOTIFICATION TRIGGERS
         // ─────────────────────────────────────────────
 
@@ -397,18 +397,74 @@ public class NotificationService {
                 });
         }
 
+        // ── BUG FIX: was using getResourceId() instead of getResourceName() ──
         public void notifyBookingApproved(String userId, Booking booking) {
                 notifyBookingApproved(
                                 userId,
                                 booking.getId(),
-                                booking.getResourceId() != null ? booking.getResourceId() : "your resource");
+                                booking.getResourceName() != null ? booking.getResourceName() : "your resource");
         }
 
         public void notifyBookingRejected(String userId, Booking booking) {
                 notifyBookingRejected(
                                 userId,
                                 booking.getId(),
-                                booking.getResourceId() != null ? booking.getResourceId() : "your resource");
+                                booking.getResourceName() != null ? booking.getResourceName() : "your resource");
+        }
+
+        // ── notifyBookingCreated ─────────────────────────────────────────────
+        public void notifyBookingCreated(String userId, Booking booking) {
+                createNotification(
+                                userId,
+                                "Booking Submitted",
+                                "Your booking for \"" + booking.getResourceName() + "\" has been submitted and is pending approval.",
+                                "BOOKING_CREATED",
+                                booking.getId());
+
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Booking Submitted — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Your booking for \"" + booking.getResourceName()
+                                                                + "\" on " + booking.getBookingDate()
+                                                                + " (" + booking.getStartTime() + " – " + booking.getEndTime()
+                                                                + ") has been submitted.\n\n"
+                                                                + "You will be notified once it is reviewed by an admin.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send booking created email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
+        }
+
+        // ── notifyBookingCancelled ───────────────────────────────────────────
+        public void notifyBookingCancelled(String userId, Booking booking) {
+                createNotification(
+                                userId,
+                                "Booking Cancelled",
+                                "Your booking for \"" + booking.getResourceName() + "\" has been cancelled by an admin.",
+                                "BOOKING_CANCELLED",
+                                booking.getId());
+
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Booking Cancelled — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Your booking for \"" + booking.getResourceName()
+                                                                + "\" on " + booking.getBookingDate()
+                                                                + " has been cancelled by an administrator.\n\n"
+                                                                + "Please contact admin if you have any questions.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send booking cancelled email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
         }
 
         // ─────────────────────────────────────────────
