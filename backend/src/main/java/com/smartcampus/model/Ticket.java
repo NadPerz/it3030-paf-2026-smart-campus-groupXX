@@ -42,6 +42,7 @@ public class Ticket {
     @Builder.Default
     private List<String> imageUrls = new ArrayList<>();
     private AiTriageResult aiTriage;
+    private LocalDateTime assignedAt;
     private LocalDateTime resolvedAt;
     @Builder.Default
     private List<TicketAttachment> attachments = new ArrayList<>();
