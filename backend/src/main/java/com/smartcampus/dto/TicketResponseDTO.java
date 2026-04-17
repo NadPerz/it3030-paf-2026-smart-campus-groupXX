@@ -35,4 +35,8 @@ public class TicketResponseDTO {
     private Ticket.AiTriageResult aiTriage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime assignedAt;
+    private LocalDateTime resolvedAt;
+    private String timeToFirstResponse;
+    private String timeToResolution;
 }
