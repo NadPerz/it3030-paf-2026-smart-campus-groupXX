@@ -1,7 +1,51 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import { bookingService } from '../services/bookingService';
 import { resourceService } from '../services/resourceService';
+
+// ─── Sidebar Design tokens ────────────────────────────────────────────────────
+
+const ROLE_BADGE = {
+  USER:       { bg: '#EFF6FF', text: '#1E40AF' },
+  ADMIN:      { bg: '#F5F3FF', text: '#6D28D9' },
+  TECHNICIAN: { bg: '#F0FDF4', text: '#15803D' },
+};
+
+// ─── Sidebar Icons ────────────────────────────────────────────────────────────
+
+const IconOverview = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+  </svg>
+);
+const IconEdit = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+const IconBooking = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+const IconTicket = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path d="M2 10a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8z" />
+    <path d="M6 10V6a6 6 0 0 1 12 0v4" />
+  </svg>
+);
+
+const NAV_ITEMS = [
+  { id: 'overview', label: 'Profile Overview', Icon: IconOverview,  path: '/profile' },
+  { id: 'edit',     label: 'Edit Profile',     Icon: IconEdit,      path: '/profile/edit' },
+  { id: 'bookings', label: 'My Bookings',       Icon: IconBooking,   path: '/bookings' },
+  { id: 'tickets',  label: 'My Tickets',        Icon: IconTicket,    path: '/tickets' },
+];
 
 // ── Status badge ────────────────────────────────────────────────────────
 function StatusBadge({ status }) {
@@ -61,6 +105,9 @@ const DownloadIcon = () => (
 const STATUS_FILTERS = ['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
 
 export default function MyBookingsPage() {
+  const navigate      = useNavigate();
+  const { user }      = useAuth();
+
   const [bookings, setBookings]   = useState([]);
   const [resources, setResources] = useState([]);
   const [loading, setLoading]     = useState(true);
@@ -131,122 +178,193 @@ export default function MyBookingsPage() {
   const inp = { width:'100%', padding:'9px 12px', border:'1px solid #e2e8f0', borderRadius:8, fontSize:13, color:'#1e293b', outline:'none', fontFamily:'inherit', background:'#f8fafc', transition:'border-color 0.15s' };
   const lbl = { display:'block', fontSize:11, fontWeight:700, color:'#64748b', marginBottom:5, textTransform:'uppercase', letterSpacing:'0.5px' };
 
+  // ── Sidebar helpers ──
+  const roleBadge = ROLE_BADGE[user?.role] || ROLE_BADGE.USER;
+  const initial   = (user?.name?.charAt(0) || user?.email?.charAt(0) || '?').toUpperCase();
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  const PANEL_MIN_H = '560px';
+
   return (
-    <div style={{ maxWidth:920, margin:'0 auto', padding:'32px 24px' }}>
+    <div
+      style={{ minHeight:'100vh', background:'#F1F5F9', paddingTop:40, paddingBottom:40, fontFamily:'Inter, system-ui, sans-serif' }}
+    >
+      <div style={{ maxWidth:1200, margin:'0 auto', paddingLeft:24, paddingRight:24 }}>
 
-      {/* ── Page header ── */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:28 }}>
-        <div>
-          <h1 style={{ fontSize:24, fontWeight:800, color:'#0f172a', marginBottom:4, letterSpacing:'-0.3px' }}>My Bookings</h1>
-          <p style={{ fontSize:13, color:'#64748b' }}>View and manage your campus resource booking requests</p>
+        <div style={{ display:'flex', gap:24, alignItems:'stretch' }}>
+
+          {/* ── Sidebar ── */}
+          <aside style={{ width:230, minHeight:PANEL_MIN_H, background:'#fff', boxShadow:'0 2px 8px rgba(0,0,0,0.07)', flexShrink:0, display:'flex', flexDirection:'column', borderRadius:16, position:'sticky', top:40, alignSelf:'flex-start' }}>            {/* Navy header */}
+            <div style={{ background:'linear-gradient(160deg, #0F172A 0%, #1E3A5F 100%)', borderRadius:'16px 16px 0 0', display:'flex', flexDirection:'column', alignItems:'center', gap:12, padding:'32px 20px' }}>
+              {user?.profilePicture ? (
+                <img src={user.profilePicture} alt="avatar" style={{ width:68, height:68, borderRadius:'50%', objectFit:'cover', border:'3px solid rgba(255,255,255,0.2)' }} />
+              ) : (
+                <div style={{ width:68, height:68, borderRadius:'50%', background:'rgba(255,255,255,0.1)', border:'3px solid rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:'bold', fontSize:26 }}>
+                  {initial}
+                </div>
+              )}
+              <div style={{ textAlign:'center' }}>
+                <div style={{ color:'#fff', fontWeight:600, fontSize:15, lineHeight:1.3 }}>{user?.name || '—'}</div>
+                <div style={{ color:'rgba(255,255,255,0.45)', fontSize:11.5, marginTop:2, maxWidth:170, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.email}</div>
+              </div>
+              <span style={{ background:'rgba(255,255,255,0.1)', color:'rgba(255,255,255,0.8)', fontSize:11, fontWeight:600, borderRadius:20, padding:'2px 12px' }}>
+                {user?.role || 'USER'}
+              </span>
+            </div>
+
+            <div style={{ height:1, background:'#F1F5F9' }} />
+
+            {/* Nav */}
+            <nav style={{ display:'flex', flexDirection:'column', padding:'8px 0', flex:1 }}>
+              {NAV_ITEMS.map((item) => {
+                const active = item.id === 'bookings';
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => navigate(item.path)}
+                    style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 20px', fontSize:13.5, fontWeight:500, width:'100%', textAlign:'left', background: active ? '#EFF6FF' : 'transparent', color: active ? '#1D4ED8' : '#4B5563', borderLeft: active ? '3px solid #1D4ED8' : '3px solid transparent', border:'none', borderLeft: active ? '3px solid #1D4ED8' : '3px solid transparent', cursor:'pointer', transition:'all 0.15s' }}
+                  >
+                    <span style={{ color: active ? '#1D4ED8' : '#9CA3AF' }}><item.Icon /></span>
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Bottom status */}
+            <div style={{ borderTop:'1px solid #F1F5F9', padding:'16px 20px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ width:8, height:8, borderRadius:'50%', background: user?.status === 'ACTIVE' ? '#22C55E' : '#F59E0B', display:'inline-block' }} />
+                <span style={{ fontSize:12, fontWeight:500, color:'#6B7280' }}>{user?.status || 'ACTIVE'}</span>
+              </div>
+              <div style={{ fontSize:11, color:'#9CA3AF', marginTop:2 }}>
+                Member since {formatDate(user?.createdAt)}
+              </div>
+            </div>
+          </aside>
+
+          {/* ── Main content (original bookings page, unchanged) ── */}
+          <main style={{ flex:1, minWidth:0 }}>
+            <div style={{ background:'#fff', borderRadius:16, boxShadow:'0 2px 8px rgba(0,0,0,0.07)', padding:'28px 28px', minHeight:PANEL_MIN_H }}>
+
+              {/* ── Page header ── */}
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:28 }}>
+                <div>
+                  <h1 style={{ fontSize:24, fontWeight:800, color:'#0f172a', marginBottom:4, letterSpacing:'-0.3px' }}>My Bookings</h1>
+                  <p style={{ fontSize:13, color:'#64748b' }}>View and manage your campus resource booking requests</p>
+                </div>
+              </div>
+
+              {/* ── Filter chips ── */}
+              <div style={{ display:'flex', gap:8, marginBottom:22, flexWrap:'wrap' }}>
+                {STATUS_FILTERS.map(s => {
+                  const active = filter === s;
+                  const counts = s === 'ALL' ? bookings.length : bookings.filter(b => b.status === s).length;
+                  return (
+                    <button key={s} onClick={() => setFilter(s)}
+                      style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'6px 14px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer', border:'1px solid', transition:'all 0.15s',
+                        borderColor: active ? '#1d4ed8' : '#e2e8f0',
+                        background: active ? '#1d4ed8' : '#fff',
+                        color: active ? '#fff' : '#64748b' }}>
+                      {s === 'ALL' ? 'All' : s}
+                      <span style={{ padding:'1px 6px', borderRadius:10, fontSize:10, fontWeight:700, background: active ? 'rgba(255,255,255,0.25)' : '#f1f5f9', color: active ? '#fff' : '#94a3b8' }}>{counts}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* ── Loading ── */}
+              {loading && (
+                <div style={{ textAlign:'center', padding:'80px 0' }}>
+                  <div style={{ width:36, height:36, border:'3px solid #e2e8f0', borderTopColor:'#1d4ed8', borderRadius:'50%', margin:'0 auto 14px', animation:'spin 0.8s linear infinite' }} />
+                  <p style={{ fontSize:13, color:'#94a3b8' }}>Loading your bookings...</p>
+                  <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                </div>
+              )}
+
+              {/* ── Empty state ── */}
+              {!loading && filtered.length === 0 && (
+                <div style={{ background:'#f8fafc', borderRadius:14, border:'1px solid #e2e8f0', padding:'70px 20px', textAlign:'center' }}>
+                  <div style={{ width:56, height:56, borderRadius:14, background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </div>
+                  <h3 style={{ fontSize:16, fontWeight:700, color:'#334155', marginBottom:6 }}>
+                    {filter === 'ALL' ? 'No bookings yet' : `No ${filter.toLowerCase()} bookings`}
+                  </h3>
+                  <p style={{ fontSize:13, color:'#94a3b8', marginBottom:20 }}>
+                    {filter === 'ALL' ? 'Submit a booking request to reserve a campus resource' : 'Try switching to a different filter'}
+                  </p>
+                  {filter === 'ALL' && (
+                    <button onClick={() => setShowModal(true)}
+                      style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'9px 20px', background:'#1d4ed8', color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+                      <PlusIcon /> Make your first booking
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* ── Booking cards ── */}
+              {!loading && filtered.map(b => (
+                <div key={b.id}
+                  style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:12, padding:'20px 22px', marginBottom:12, boxShadow:'0 1px 4px rgba(0,0,0,0.04)', display:'flex', justifyContent:'space-between', alignItems:'flex-start', transition:'box-shadow 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,0.04)'}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                      <div style={{ width:34, height:34, borderRadius:9, background:'#eff6ff', border:'1px solid #bfdbfe', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        <BuildingIcon />
+                      </div>
+                      <div>
+                        <div style={{ fontSize:15, fontWeight:700, color:'#0f172a' }}>{b.resourceName}</div>
+                        <div style={{ fontSize:11, color:'#94a3b8', marginTop:1 }}>Booking #{b.id?.slice(-6)?.toUpperCase()}</div>
+                      </div>
+                    </div>
+                    <div style={{ display:'flex', gap:16, flexWrap:'wrap', marginBottom:8, paddingLeft:42 }}>
+                      <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:12, color:'#64748b' }}><CalendarIcon />{b.bookingDate}</span>
+                      <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:12, color:'#64748b' }}><ClockIcon />{b.startTime?.substring(0,5)} – {b.endTime?.substring(0,5)}</span>
+                      {b.expectedAttendees && <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:12, color:'#64748b' }}><UsersIcon />{b.expectedAttendees} attendees</span>}
+                    </div>
+                    <div style={{ fontSize:12, color:'#94a3b8', paddingLeft:42 }}>{b.purpose}</div>
+                    {b.adminRemarks && (
+                      <div style={{ marginTop:8, paddingLeft:42 }}>
+                        <span style={{ fontSize:11, color:'#475569', background:'#f8fafc', border:'1px solid #e2e8f0', padding:'3px 10px', borderRadius:6, display:'inline-block' }}>
+                          Note: {b.adminRemarks}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:10, marginLeft:20, flexShrink:0 }}>
+                    <StatusBadge status={b.status} />
+                    <div style={{ display:'flex', gap:7 }}>
+                      {b.status === 'APPROVED' && (
+                        <button onClick={() => handleViewQR(b)}
+                          style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, fontSize:12, fontWeight:600, cursor:'pointer', background:'#eff6ff', color:'#1d4ed8', border:'1px solid #bfdbfe', transition:'all 0.15s' }}>
+                          <QRIcon /> View QR
+                        </button>
+                      )}
+                      {['PENDING','APPROVED'].includes(b.status) && (
+                        <button onClick={() => handleCancel(b)}
+                          style={{ padding:'6px 12px', borderRadius:7, fontSize:12, fontWeight:600, cursor:'pointer', background:'#f8fafc', color:'#64748b', border:'1px solid #e2e8f0', transition:'all 0.15s' }}>
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+            </div>
+          </main>
         </div>
-        <button onClick={() => setShowModal(true)}
-          style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 20px', background:'#1d4ed8', color:'#fff', border:'none', borderRadius:9, fontSize:13, fontWeight:700, cursor:'pointer', letterSpacing:'0.2px', boxShadow:'0 1px 6px rgba(29,78,216,0.3)' }}>
-          <PlusIcon /> New Booking
-        </button>
       </div>
 
-      {/* ── Filter chips ── */}
-      <div style={{ display:'flex', gap:8, marginBottom:22, flexWrap:'wrap' }}>
-        {STATUS_FILTERS.map(s => {
-          const active = filter === s;
-          const counts = s === 'ALL' ? bookings.length : bookings.filter(b => b.status === s).length;
-          return (
-            <button key={s} onClick={() => setFilter(s)}
-              style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'6px 14px', borderRadius:20, fontSize:12, fontWeight:600, cursor:'pointer', border:'1px solid', transition:'all 0.15s',
-                borderColor: active ? '#1d4ed8' : '#e2e8f0',
-                background: active ? '#1d4ed8' : '#fff',
-                color: active ? '#fff' : '#64748b' }}>
-              {s === 'ALL' ? 'All' : s}
-              <span style={{ padding:'1px 6px', borderRadius:10, fontSize:10, fontWeight:700, background: active ? 'rgba(255,255,255,0.25)' : '#f1f5f9', color: active ? '#fff' : '#94a3b8' }}>{counts}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Loading ── */}
-      {loading && (
-        <div style={{ textAlign:'center', padding:'80px 0' }}>
-          <div style={{ width:36, height:36, border:'3px solid #e2e8f0', borderTopColor:'#1d4ed8', borderRadius:'50%', margin:'0 auto 14px', animation:'spin 0.8s linear infinite' }} />
-          <p style={{ fontSize:13, color:'#94a3b8' }}>Loading your bookings...</p>
-          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-        </div>
-      )}
-
-      {/* ── Empty state ── */}
-      {!loading && filtered.length === 0 && (
-        <div style={{ background:'#fff', borderRadius:14, border:'1px solid #e2e8f0', padding:'70px 20px', textAlign:'center', boxShadow:'0 1px 4px rgba(0,0,0,0.04)' }}>
-          <div style={{ width:56, height:56, borderRadius:14, background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-          </div>
-          <h3 style={{ fontSize:16, fontWeight:700, color:'#334155', marginBottom:6 }}>
-            {filter === 'ALL' ? 'No bookings yet' : `No ${filter.toLowerCase()} bookings`}
-          </h3>
-          <p style={{ fontSize:13, color:'#94a3b8', marginBottom:20 }}>
-            {filter === 'ALL' ? 'Submit a booking request to reserve a campus resource' : 'Try switching to a different filter'}
-          </p>
-          {filter === 'ALL' && (
-            <button onClick={() => setShowModal(true)}
-              style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'9px 20px', background:'#1d4ed8', color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer' }}>
-              <PlusIcon /> Make your first booking
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* ── Booking cards ── */}
-      {!loading && filtered.map(b => (
-        <div key={b.id}
-          style={{ background:'#fff', border:'1px solid #e2e8f0', borderRadius:12, padding:'20px 22px', marginBottom:12, boxShadow:'0 1px 4px rgba(0,0,0,0.04)', display:'flex', justifyContent:'space-between', alignItems:'flex-start', transition:'box-shadow 0.15s' }}
-          onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.08)'}
-          onMouseLeave={e => e.currentTarget.style.boxShadow='0 1px 4px rgba(0,0,0,0.04)'}>
-          <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-              <div style={{ width:34, height:34, borderRadius:9, background:'#eff6ff', border:'1px solid #bfdbfe', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <BuildingIcon />
-              </div>
-              <div>
-                <div style={{ fontSize:15, fontWeight:700, color:'#0f172a' }}>{b.resourceName}</div>
-                <div style={{ fontSize:11, color:'#94a3b8', marginTop:1 }}>Booking #{b.id?.slice(-6)?.toUpperCase()}</div>
-              </div>
-            </div>
-            <div style={{ display:'flex', gap:16, flexWrap:'wrap', marginBottom:8, paddingLeft:42 }}>
-              <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:12, color:'#64748b' }}><CalendarIcon />{b.bookingDate}</span>
-              <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:12, color:'#64748b' }}><ClockIcon />{b.startTime?.substring(0,5)} – {b.endTime?.substring(0,5)}</span>
-              {b.expectedAttendees && <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:12, color:'#64748b' }}><UsersIcon />{b.expectedAttendees} attendees</span>}
-            </div>
-            <div style={{ fontSize:12, color:'#94a3b8', paddingLeft:42 }}>{b.purpose}</div>
-            {b.adminRemarks && (
-              <div style={{ marginTop:8, paddingLeft:42 }}>
-                <span style={{ fontSize:11, color:'#475569', background:'#f8fafc', border:'1px solid #e2e8f0', padding:'3px 10px', borderRadius:6, display:'inline-block' }}>
-                  Note: {b.adminRemarks}
-                </span>
-              </div>
-            )}
-          </div>
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:10, marginLeft:20, flexShrink:0 }}>
-            <StatusBadge status={b.status} />
-            <div style={{ display:'flex', gap:7 }}>
-              {b.status === 'APPROVED' && (
-                <button onClick={() => handleViewQR(b)}
-                  style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 12px', borderRadius:7, fontSize:12, fontWeight:600, cursor:'pointer', background:'#eff6ff', color:'#1d4ed8', border:'1px solid #bfdbfe', transition:'all 0.15s' }}>
-                  <QRIcon /> View QR
-                </button>
-              )}
-              {['PENDING','APPROVED'].includes(b.status) && (
-                <button onClick={() => handleCancel(b)}
-                  style={{ padding:'6px 12px', borderRadius:7, fontSize:12, fontWeight:600, cursor:'pointer', background:'#f8fafc', color:'#64748b', border:'1px solid #e2e8f0', transition:'all 0.15s' }}>
-                  Cancel
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      ))}
-
-      {/* ── CREATE MODAL ── */}
+      {/* ── CREATE MODAL (unchanged) ── */}
       {showModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(4px)' }}>
           <div style={{ background:'#fff', borderRadius:16, padding:32, width:500, maxWidth:'95vw', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 24px 60px rgba(0,0,0,0.18)' }}>
@@ -306,7 +424,7 @@ export default function MyBookingsPage() {
         </div>
       )}
 
-      {/* ── QR MODAL ── */}
+      {/* ── QR MODAL (unchanged) ── */}
       {showQR && (
         <div style={{ position:'fixed', inset:0, background:'rgba(15,23,42,0.5)', zIndex:200, display:'flex', alignItems:'center', justifyContent:'center', backdropFilter:'blur(4px)' }}>
           <div style={{ background:'#fff', borderRadius:16, padding:32, width:360, maxWidth:'95vw', boxShadow:'0 24px 60px rgba(0,0,0,0.18)', textAlign:'center' }}>
