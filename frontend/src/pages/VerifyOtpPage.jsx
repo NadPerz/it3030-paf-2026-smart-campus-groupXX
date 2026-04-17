@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import axios from 'axios';
 
-const RESEND_SECONDS = 180; // 3 minutes
+const RESEND_SECONDS = 60; // 1 minute
 
 function VerifyOtpPage() {
   const [digits, setDigits] = useState(Array(6).fill(''));
