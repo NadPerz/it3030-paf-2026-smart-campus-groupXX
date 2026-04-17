@@ -22,6 +22,8 @@ public class User {
     private String email;
     private String name;
     private String profilePicture;
+    private String phone;
+    private String bio;
     @Builder.Default
     private UserRole role = UserRole.USER;
     @Builder.Default

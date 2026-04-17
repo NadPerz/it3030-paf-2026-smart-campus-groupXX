@@ -10,6 +10,7 @@ import com.smartcampus.model.User;
 import com.smartcampus.repository.NotificationRepository;
 import com.smartcampus.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -21,25 +22,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
 
         private final NotificationRepository notificationRepository;
         private final UserRepository userRepository;
+        private final EmailService emailService;
 
         // ─────────────────────────────────────────────
         // SSE EMITTER MANAGEMENT
         // ─────────────────────────────────────────────
 
-        /** One user can have multiple open browser tabs — store all their emitters */
         private final Map<String, CopyOnWriteArrayList<SseEmitter>> emitters = new ConcurrentHashMap<>();
 
-        /**
-         * Called by NotificationController to open a real-time SSE stream for a user
-         */
         public SseEmitter createEmitter(String userId) {
-                SseEmitter emitter = new SseEmitter(0L); // 0L = no timeout
+                SseEmitter emitter = new SseEmitter(0L);
                 CopyOnWriteArrayList<SseEmitter> userEmitters = emitters.computeIfAbsent(userId,
                                 k -> new CopyOnWriteArrayList<>());
                 userEmitters.add(emitter);
@@ -51,7 +50,6 @@ public class NotificationService {
                 return emitter;
         }
 
-        /** Push a notification DTO to all open tabs of a user instantly */
         private void pushToUser(String userId, NotificationDTO dto) {
                 CopyOnWriteArrayList<SseEmitter> userEmitters = emitters.get(userId);
                 if (userEmitters == null || userEmitters.isEmpty())
@@ -74,10 +72,6 @@ public class NotificationService {
         // CORE CRUD OPERATIONS
         // ─────────────────────────────────────────────
 
-        /**
-         * Creates and persists a notification, then pushes it via SSE in real time.
-         * Called internally — never exposed directly via HTTP.
-         */
         public void createNotification(String userId, String title, String message,
                         String type, String referenceId) {
                 Notification notification = Notification.builder()
@@ -89,10 +83,9 @@ public class NotificationService {
                                 .isRead(false)
                                 .build();
                 Notification saved = notificationRepository.save(notification);
-                pushToUser(userId, toDTO(saved)); // ← real-time push to browser
+                pushToUser(userId, toDTO(saved));
         }
 
-        /** Get all notifications for a user, newest first */
         public List<NotificationDTO> getNotificationsForUser(String userId) {
                 return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId)
                                 .stream()
@@ -100,27 +93,23 @@ public class NotificationService {
                                 .collect(Collectors.toList());
         }
 
-        /** Mark a single notification as read — verifies ownership */
         public NotificationDTO markAsRead(String notificationId, String userId) {
                 Notification notification = findAndVerifyOwnership(notificationId, userId);
                 notification.setRead(true);
                 return toDTO(notificationRepository.save(notification));
         }
 
-        /** Mark all notifications as read for a user */
         public void markAllAsRead(String userId) {
                 List<Notification> unread = notificationRepository.findByUserIdAndIsReadFalse(userId);
                 unread.forEach(n -> n.setRead(true));
                 notificationRepository.saveAll(unread);
         }
 
-        /** Delete a notification — verifies ownership */
         public void deleteNotification(String notificationId, String userId) {
                 findAndVerifyOwnership(notificationId, userId);
                 notificationRepository.deleteById(notificationId);
         }
 
-        /** Get count of unread notifications */
         public long getUnreadCount(String userId) {
                 return notificationRepository.countByUserIdAndIsReadFalse(userId);
         }
@@ -152,6 +141,19 @@ public class NotificationService {
                                         "NEW_USER_PENDING",
                                         user.getId());
                 }
+
+                // Email notification to user
+                try {
+                        emailService.sendEmail(
+                                        user.getEmail(),
+                                        "Account Pending Approval — SmartCampus",
+                                        "Hi " + user.getName() + ",\n\n"
+                                                        + "Your account has been submitted and is awaiting admin approval. "
+                                                        + "You'll be notified once your account is activated.\n\n"
+                                                        + "SmartCampus Team");
+                } catch (Exception e) {
+                        log.warn("Failed to send account pending email to {}: {}", user.getEmail(), e.getMessage());
+                }
         }
 
         public void notifyAccountApproved(User user) {
@@ -161,6 +163,33 @@ public class NotificationService {
                                 "Great news! Your account has been approved. You now have full access to Smart Campus Hub.",
                                 "ACCOUNT_APPROVED",
                                 user.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "User Account Approved",
+                                        "The account for " + user.getName() + " (" + user.getEmail()
+                                                        + ") has been approved.",
+                                        "ACCOUNT_APPROVED",
+                                        user.getId());
+                }
+
+                // Email notification to user
+                try {
+                        emailService.sendEmail(
+                                        user.getEmail(),
+                                        "Account Approved — SmartCampus",
+                                        "Hi " + user.getName() + ",\n\n"
+                                                        + "Great news! Your account has been approved. "
+                                                        + "You now have full access to Smart Campus Hub.\n\n"
+                                                        + "SmartCampus Team");
+                } catch (Exception e) {
+                        log.warn("Failed to send account approved email to {}: {}", user.getEmail(), e.getMessage());
+                }
         }
 
         public void notifyAccountSuspended(User user) {
@@ -170,6 +199,33 @@ public class NotificationService {
                                 "Your account has been suspended. Please contact an administrator if you believe this is a mistake.",
                                 "ACCOUNT_SUSPENDED",
                                 user.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "User Account Suspended",
+                                        "The account for " + user.getName() + " (" + user.getEmail()
+                                                        + ") has been suspended.",
+                                        "ACCOUNT_SUSPENDED",
+                                        user.getId());
+                }
+
+                // Email notification to user
+                try {
+                        emailService.sendEmail(
+                                        user.getEmail(),
+                                        "Account Suspended — SmartCampus",
+                                        "Hi " + user.getName() + ",\n\n"
+                                                        + "Your account has been suspended. "
+                                                        + "Please contact an administrator if you believe this is a mistake.\n\n"
+                                                        + "SmartCampus Team");
+                } catch (Exception e) {
+                        log.warn("Failed to send account suspended email to {}: {}", user.getEmail(), e.getMessage());
+                }
         }
 
         public void notifyAccountReactivated(User user) {
@@ -179,6 +235,33 @@ public class NotificationService {
                                 "Your account has been reactivated. You can now log in and access Smart Campus Hub.",
                                 "ACCOUNT_REACTIVATED",
                                 user.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "User Account Reactivated",
+                                        "The account for " + user.getName() + " (" + user.getEmail()
+                                                        + ") has been reactivated.",
+                                        "ACCOUNT_REACTIVATED",
+                                        user.getId());
+                }
+
+                // Email notification to user
+                try {
+                        emailService.sendEmail(
+                                        user.getEmail(),
+                                        "Account Reactivated — SmartCampus",
+                                        "Hi " + user.getName() + ",\n\n"
+                                                        + "Your account has been reactivated. "
+                                                        + "You can now log in and access Smart Campus Hub.\n\n"
+                                                        + "SmartCampus Team");
+                } catch (Exception e) {
+                        log.warn("Failed to send account reactivated email to {}: {}", user.getEmail(), e.getMessage());
+                }
         }
 
         public void notifyProfileNameUpdated(User user, String oldName) {
@@ -202,6 +285,20 @@ public class NotificationService {
                                         "USER_PROFILE_UPDATED",
                                         user.getId());
                 }
+
+                // Email notification to user
+                try {
+                        emailService.sendEmail(
+                                        user.getEmail(),
+                                        "Profile Updated — SmartCampus",
+                                        "Hi " + user.getName() + ",\n\n"
+                                                        + "Your display name has been updated to \"" + user.getName()
+                                                        + "\".\n\n"
+                                                        + "If you did not make this change, please contact an administrator.\n\n"
+                                                        + "SmartCampus Team");
+                } catch (Exception e) {
+                        log.warn("Failed to send profile updated email to {}: {}", user.getEmail(), e.getMessage());
+                }
         }
 
         public void notifyRoleChanged(User user, UserRole oldRole, UserRole newRole) {
@@ -212,10 +309,39 @@ public class NotificationService {
                                                 + " to " + newRole.name() + ".",
                                 "ROLE_CHANGED",
                                 user.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "User Role Changed",
+                                        "The role for " + user.getName() + " (" + user.getEmail()
+                                                        + ") has been changed from "
+                                                        + oldRole.name() + " to " + newRole.name() + ".",
+                                        "ROLE_CHANGED",
+                                        user.getId());
+                }
+
+                // Email notification to user
+                try {
+                        emailService.sendEmail(
+                                        user.getEmail(),
+                                        "Account Role Updated — SmartCampus",
+                                        "Hi " + user.getName() + ",\n\n"
+                                                        + "Your account role has been changed from " + oldRole.name()
+                                                        + " to " + newRole.name() + ".\n\n"
+                                                        + "If you have any questions, please contact an administrator.\n\n"
+                                                        + "SmartCampus Team");
+                } catch (Exception e) {
+                        log.warn("Failed to send role changed email to {}: {}", user.getEmail(), e.getMessage());
+                }
         }
 
-        // ─────────────────────────────────────────────
-        // BOOKING NOTIFICATION TRIGGERS (for Member 2)
+// ─────────────────────────────────────────────
+        // BOOKING NOTIFICATION TRIGGERS
         // ─────────────────────────────────────────────
 
         public void notifyBookingApproved(String userId, String bookingId, String resourceName) {
@@ -225,6 +351,23 @@ public class NotificationService {
                                 "Your booking for \"" + resourceName + "\" has been approved.",
                                 "BOOKING_APPROVED",
                                 bookingId);
+
+                // Email notification
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Booking Approved — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Your booking for \"" + resourceName
+                                                                + "\" has been approved.\n\n"
+                                                                + "You can view your booking details in the SmartCampus app.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send booking approved email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
         }
 
         public void notifyBookingRejected(String userId, String bookingId, String resourceName) {
@@ -235,26 +378,97 @@ public class NotificationService {
                                                 + "\" has been rejected. Please contact admin for details.",
                                 "BOOKING_REJECTED",
                                 bookingId);
+
+                // Email notification
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Booking Rejected — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Unfortunately, your booking for \"" + resourceName
+                                                                + "\" has been rejected.\n\n"
+                                                                + "Please contact an administrator for more details.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send booking rejected email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
         }
 
-        /** Overload — called by Member 2's BookingService with a Booking object */
+        // ── BUG FIX: was using getResourceId() instead of getResourceName() ──
         public void notifyBookingApproved(String userId, Booking booking) {
                 notifyBookingApproved(
                                 userId,
                                 booking.getId(),
-                                booking.getResourceId() != null ? booking.getResourceId() : "your resource");
+                                booking.getResourceName() != null ? booking.getResourceName() : "your resource");
         }
 
-        /** Overload — called by Member 2's BookingService with a Booking object */
         public void notifyBookingRejected(String userId, Booking booking) {
                 notifyBookingRejected(
                                 userId,
                                 booking.getId(),
-                                booking.getResourceId() != null ? booking.getResourceId() : "your resource");
+                                booking.getResourceName() != null ? booking.getResourceName() : "your resource");
+        }
+
+        // ── notifyBookingCreated ─────────────────────────────────────────────
+        public void notifyBookingCreated(String userId, Booking booking) {
+                createNotification(
+                                userId,
+                                "Booking Submitted",
+                                "Your booking for \"" + booking.getResourceName() + "\" has been submitted and is pending approval.",
+                                "BOOKING_CREATED",
+                                booking.getId());
+
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Booking Submitted — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Your booking for \"" + booking.getResourceName()
+                                                                + "\" on " + booking.getBookingDate()
+                                                                + " (" + booking.getStartTime() + " – " + booking.getEndTime()
+                                                                + ") has been submitted.\n\n"
+                                                                + "You will be notified once it is reviewed by an admin.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send booking created email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
+        }
+
+        // ── notifyBookingCancelled ───────────────────────────────────────────
+        public void notifyBookingCancelled(String userId, Booking booking) {
+                createNotification(
+                                userId,
+                                "Booking Cancelled",
+                                "Your booking for \"" + booking.getResourceName() + "\" has been cancelled by an admin.",
+                                "BOOKING_CANCELLED",
+                                booking.getId());
+
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Booking Cancelled — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Your booking for \"" + booking.getResourceName()
+                                                                + "\" on " + booking.getBookingDate()
+                                                                + " has been cancelled by an administrator.\n\n"
+                                                                + "Please contact admin if you have any questions.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send booking cancelled email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
         }
 
         // ─────────────────────────────────────────────
-        // TICKET NOTIFICATION TRIGGERS (for Member 3)
+        // TICKET NOTIFICATION TRIGGERS
         // ─────────────────────────────────────────────
 
         public void notifyTicketStatusChanged(String userId, String ticketId, String newStatus) {
@@ -264,6 +478,23 @@ public class NotificationService {
                                 "Your ticket status has been updated to: " + newStatus + ".",
                                 "TICKET_STATUS_CHANGED",
                                 ticketId);
+
+                // Email notification
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Ticket Update — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Your ticket status has been updated to: " + newStatus
+                                                                + ".\n\n"
+                                                                + "Log in to SmartCampus to view the full details.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send ticket status email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
         }
 
         public void notifyNewTicketComment(String userId, String ticketId, String commenterName) {
@@ -276,7 +507,7 @@ public class NotificationService {
         }
 
         // ─────────────────────────────────────────────
-        // RESOURCE NOTIFICATION TRIGGERS (for Member 1)
+        // RESOURCE NOTIFICATION TRIGGERS
         // ─────────────────────────────────────────────
 
         public void notifyResourceOutOfService(String userId, String resourceId, String resourceName) {
