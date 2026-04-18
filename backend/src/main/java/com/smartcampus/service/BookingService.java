@@ -3,41 +3,25 @@ package com.smartcampus.service;
 import com.smartcampus.dto.BookingApprovalDTO;
 import com.smartcampus.dto.BookingRequestDTO;
 import com.smartcampus.dto.BookingResponseDTO;
+import com.smartcampus.enums.BookingStatus;
+import com.smartcampus.exception.BadRequestException;
+import com.smartcampus.exception.BookingConflictException;
+import com.smartcampus.exception.ResourceNotFoundException;
+import com.smartcampus.exception.UnauthorizedException;
+import com.smartcampus.model.Booking;
+import com.smartcampus.model.User;
 import com.smartcampus.repository.BookingRepository;
 import com.smartcampus.repository.ResourceRepository;
 import com.smartcampus.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * Booking service — Member 2 responsibility.
- *
- * TODO (Member 2): Implement the full booking workflow:
- *
- * STATE MACHINE:
- *   PENDING ──► APPROVED  (admin approves → generate QR code via QRCodeService)
- *   PENDING ──► REJECTED  (admin rejects → store rejection reason)
- *   APPROVED ──► CANCELLED (user or admin cancels)
- *
- * CONFLICT DETECTION ALGORITHM:
- *   Before creating or approving a booking, call:
- *   List<Booking> conflicts = bookingRepository.findConflictingBookings(
- *       resourceId, date, startTime, endTime);
- *   if (!conflicts.isEmpty()) { throw BookingConflictException; }
- *
- *   Two time slots conflict when:
- *     newStart < existingEnd  AND  newEnd > existingStart
- *
- *   Only PENDING and APPROVED bookings block a slot.
- *   If a conflict exists, throw BookingConflictException.
- *
- * QR CHECK-IN FLOW (innovation):
- *   1. On booking approval, call qrCodeService.generateQRCode(bookingId) → base64 PNG
- *   2. Store result in booking.qrCode field
- *   3. On check-in, call qrCodeService.verifyQRCode(token) to validate
- */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingService {
@@ -48,53 +32,242 @@ public class BookingService {
     private final QRCodeService qrCodeService;
     private final NotificationService notificationService;
 
-    public BookingResponseDTO createBooking(String userId, BookingRequestDTO dto) {
-        // TODO (Member 2): Implement — check conflicts, create booking with PENDING status
-        throw new UnsupportedOperationException("TODO: Member 2 — implement createBooking()");
+    // ── HELPER: get current authenticated user ──────────────────────
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Authenticated user not found"));
     }
 
-    public List<BookingResponseDTO> getMyBookings(String userId) {
-        // TODO (Member 2): Implement
-        throw new UnsupportedOperationException("TODO: Member 2 — implement getMyBookings()");
+    // ── HELPER: map Booking → BookingResponseDTO ────────────────────
+    private BookingResponseDTO toDTO(Booking b) {
+        return BookingResponseDTO.builder()
+                .id(b.getId())
+                .userId(b.getUserId())
+                .userName(b.getUserName())
+                .resourceId(b.getResourceId())
+                .resourceName(b.getResourceName())
+                .bookingDate(b.getBookingDate())
+                .startTime(b.getStartTime())
+                .endTime(b.getEndTime())
+                .purpose(b.getPurpose())
+                .expectedAttendees(b.getExpectedAttendees())
+                .status(b.getStatus())
+                .adminRemarks(b.getAdminRemarks())
+                .qrCode(b.getQrCode())
+                .createdAt(b.getCreatedAt())
+                .updatedAt(b.getUpdatedAt())
+                .build();
     }
 
+    // ── CREATE BOOKING ───────────────────────────────────────────────
+    public BookingResponseDTO createBooking(BookingRequestDTO dto) {
+        User user = getCurrentUser();
+
+        if (!dto.getStartTime().isBefore(dto.getEndTime())) {
+            throw new BadRequestException("Start time must be before end time");
+        }
+
+        var resource = resourceRepository.findById(dto.getResourceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found: " + dto.getResourceId()));
+
+        List<Booking> conflicts = bookingRepository.findConflictingBookings(
+                dto.getResourceId(), dto.getBookingDate(), dto.getStartTime(), dto.getEndTime());
+        if (!conflicts.isEmpty()) {
+            throw new BookingConflictException(
+                "This resource is already booked for the selected time slot. " +
+                "Conflicting booking ID: " + conflicts.get(0).getId());
+        }
+
+        Booking booking = Booking.builder()
+                .userId(user.getId())
+                .userName(user.getName())
+                .resourceId(dto.getResourceId())
+                .resourceName(resource.getName())
+                .bookingDate(dto.getBookingDate())
+                .startTime(dto.getStartTime())
+                .endTime(dto.getEndTime())
+                .purpose(dto.getPurpose())
+                .expectedAttendees(dto.getExpectedAttendees())
+                .status(BookingStatus.PENDING)
+                .build();
+
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify admins — new booking request submitted
+        try {
+            notificationService.notifyBookingCreated(user.getId(), saved);
+        } catch (Exception e) {
+            log.warn("Failed to send booking created notification: {}", e.getMessage());
+        }
+
+        return toDTO(saved);
+    }
+
+    // ── GET MY BOOKINGS ──────────────────────────────────────────────
+    public List<BookingResponseDTO> getMyBookings() {
+        User user = getCurrentUser();
+        return bookingRepository.findByUserIdOrderByBookingDateDesc(user.getId())
+                .stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    // ── GET ALL BOOKINGS (admin) ─────────────────────────────────────
     public List<BookingResponseDTO> getAllBookings() {
-        // TODO (Member 2): Implement (admin only)
-        throw new UnsupportedOperationException("TODO: Member 2 — implement getAllBookings()");
+        return bookingRepository.findAllByOrderByCreatedAtDesc()
+                .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    // ── GET BOOKING BY ID ────────────────────────────────────────────
     public BookingResponseDTO getBookingById(String id) {
-        // TODO (Member 2): Implement
-        throw new UnsupportedOperationException("TODO: Member 2 — implement getBookingById()");
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + id));
+        return toDTO(booking);
     }
 
+    // ── APPROVE BOOKING (admin) ──────────────────────────────────────
     public BookingResponseDTO approveBooking(String id, BookingApprovalDTO dto) {
-        // TODO (Member 2): Implement — set APPROVED, generate QR code, notify user
-        throw new UnsupportedOperationException("TODO: Member 2 — implement approveBooking()");
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + id));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new BadRequestException("Only PENDING bookings can be approved. Current status: " + booking.getStatus());
+        }
+
+        List<Booking> conflicts = bookingRepository.findConflictingBookings(
+                booking.getResourceId(), booking.getBookingDate(),
+                booking.getStartTime(), booking.getEndTime())
+                .stream().filter(c -> !c.getId().equals(id)).collect(Collectors.toList());
+
+        if (!conflicts.isEmpty()) {
+            throw new BookingConflictException("Cannot approve — overlapping booking exists: " + conflicts.get(0).getId());
+        }
+
+        String qrCode = qrCodeService.generateQRCode(id);
+
+        booking.setStatus(BookingStatus.APPROVED);
+        booking.setAdminRemarks(dto.getAdminRemarks());
+        booking.setQrCode(qrCode);
+
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify the booking owner — approved + QR ready
+        try {
+            notificationService.notifyBookingApproved(booking.getUserId(), saved);
+        } catch (Exception e) {
+            log.warn("Failed to send booking approved notification: {}", e.getMessage());
+        }
+
+        return toDTO(saved);
     }
 
+    // ── REJECT BOOKING (admin) ───────────────────────────────────────
     public BookingResponseDTO rejectBooking(String id, BookingApprovalDTO dto) {
-        // TODO (Member 2): Implement — set REJECTED, store reason, notify user
-        throw new UnsupportedOperationException("TODO: Member 2 — implement rejectBooking()");
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + id));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new BadRequestException("Only PENDING bookings can be rejected. Current status: " + booking.getStatus());
+        }
+
+        booking.setStatus(BookingStatus.REJECTED);
+        booking.setAdminRemarks(dto.getAdminRemarks());
+
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify the booking owner — rejected with reason
+        try {
+            notificationService.notifyBookingRejected(booking.getUserId(), saved);
+        } catch (Exception e) {
+            log.warn("Failed to send booking rejected notification: {}", e.getMessage());
+        }
+
+        return toDTO(saved);
     }
 
-    public BookingResponseDTO cancelBooking(String id, String userId) {
-        // TODO (Member 2): Implement — validate ownership, set CANCELLED
-        throw new UnsupportedOperationException("TODO: Member 2 — implement cancelBooking()");
+    // ── CANCEL BOOKING (owner or admin) ─────────────────────────────
+    public BookingResponseDTO cancelBooking(String id) {
+        User user = getCurrentUser();
+
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + id));
+
+        boolean isOwner = booking.getUserId().equals(user.getId());
+        boolean isAdmin = "ADMIN".equals(user.getRole().name());
+
+        if (!isOwner && !isAdmin) {
+            throw new UnauthorizedException("You are not allowed to cancel this booking");
+        }
+
+        if (booking.getStatus() == BookingStatus.CANCELLED ||
+            booking.getStatus() == BookingStatus.REJECTED) {
+            throw new BadRequestException("Booking is already " + booking.getStatus());
+        }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+        Booking saved = bookingRepository.save(booking);
+
+        // Notify owner only if an admin cancelled on their behalf
+        try {
+            if (isAdmin && !isOwner) {
+                notificationService.notifyBookingCancelled(booking.getUserId(), saved);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to send booking cancelled notification: {}", e.getMessage());
+        }
+
+        return toDTO(saved);
     }
 
+    // ── DELETE BOOKING (admin) ───────────────────────────────────────
     public void deleteBooking(String id) {
-        // TODO (Member 2): Implement (admin only)
-        throw new UnsupportedOperationException("TODO: Member 2 — implement deleteBooking()");
+        if (!bookingRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Booking not found: " + id);
+        }
+        bookingRepository.deleteById(id);
+        // No notification needed for hard delete
     }
 
+    // ── GET QR CODE ──────────────────────────────────────────────────
     public String getQRCode(String bookingId) {
-        // TODO (Member 2): Implement — return the stored QR code string
-        throw new UnsupportedOperationException("TODO: Member 2 — implement getQRCode()");
+        User user = getCurrentUser();
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+
+        boolean isOwner = booking.getUserId().equals(user.getId());
+        boolean isAdmin = "ADMIN".equals(user.getRole().name());
+
+        if (!isOwner && !isAdmin) {
+            throw new UnauthorizedException("You are not allowed to view this QR code");
+        }
+
+        if (booking.getStatus() != BookingStatus.APPROVED) {
+            throw new BadRequestException("QR code is only available for APPROVED bookings. Current status: " + booking.getStatus());
+        }
+
+        if (booking.getQrCode() == null) {
+            String qr = qrCodeService.generateQRCode(bookingId);
+            booking.setQrCode(qr);
+            bookingRepository.save(booking);
+            return qr;
+        }
+
+        return booking.getQrCode();
     }
 
+    // ── CHECK IN VIA QR ──────────────────────────────────────────────
     public BookingResponseDTO checkIn(String qrToken) {
-        // TODO (Member 2): Implement — verify QR token, mark booking as checked in
-        throw new UnsupportedOperationException("TODO: Member 2 — implement checkIn()");
+        String bookingId = qrCodeService.verifyQRCode(qrToken);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found for QR token"));
+
+        if (booking.getStatus() != BookingStatus.APPROVED) {
+            throw new BadRequestException("Check-in only allowed for APPROVED bookings. Status: " + booking.getStatus());
+        }
+
+        booking.setAdminRemarks("Checked in via QR on " + java.time.LocalDateTime.now());
+        return toDTO(bookingRepository.save(booking));
+        // No notification for check-in — self-service action
     }
 }

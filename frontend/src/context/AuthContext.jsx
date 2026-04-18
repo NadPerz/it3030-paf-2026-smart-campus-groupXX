@@ -1,54 +1,113 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
-/**
- * Authentication context — shared across all modules.
- * Member 4 is responsible for integrating OAuth2 Google sign-in.
- */
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check localStorage for a saved user session on mount
   useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('user');
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
+    async function initAuth() {
+      try {
+        const savedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
+
+        if (savedUser && token) {
+          try {
+            const response = await api.get('/auth/me');
+            const freshUser = response.data;
+            const updatedUser = { ...JSON.parse(savedUser), ...freshUser, token };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+
+            // Redirect based on status on page load — only if not already there
+            const currentPath = window.location.pathname;
+            if (freshUser.status === 'SUSPENDED' && currentPath !== '/access-denied') {
+              window.location.href = '/access-denied';
+              return;
+            }
+            if (freshUser.status === 'PENDING' && currentPath !== '/pending-approval') {
+              window.location.href = '/pending-approval';
+              return;
+            }
+          } catch (err) {
+            if (err.response?.status === 401) {
+              setUser(null);
+              localStorage.removeItem('user');
+              localStorage.removeItem('token');
+            } else {
+              setUser(JSON.parse(savedUser));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to init auth', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Failed to parse saved user from localStorage', err);
-      localStorage.removeItem('user');
-    } finally {
-      setLoading(false);
     }
+
+    initAuth();
   }, []);
 
-  /**
-   * Persist authenticated user data (called after OAuth2 success).
-   * @param {object} userData - user object from /api/auth/me
-   */
-  function login(userData) {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-    if (userData.token) {
-      localStorage.setItem('token', userData.token);
-    }
-  }
+  // Background check every 10 seconds
+  useEffect(() => {
+    if (!user) return;
 
-  /**
-   * Clear user session.
-   */
+    const interval = setInterval(async () => {
+      try {
+        const response = await api.get('/auth/me');
+        const updatedUser = response.data;
+
+        const currentPath = window.location.pathname;
+
+        // Redirect based on status — only if not already on correct page
+        if (updatedUser.status === 'SUSPENDED' && currentPath !== '/access-denied') {
+          window.location.href = '/access-denied';
+          return;
+        }
+        if (updatedUser.status === 'PENDING' && currentPath !== '/pending-approval') {
+          window.location.href = '/pending-approval';
+          return;
+        }
+
+        // Update context if anything changed
+        if (updatedUser.status !== user.status) {
+          setUser(prev => ({ ...prev, ...updatedUser }));
+          localStorage.setItem('user', JSON.stringify({ ...user, ...updatedUser }));
+        }
+      } catch (err) {
+        if (err.response?.status === 401) {
+          setUser(null);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        }
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+  function login(userData) {
+  setUser(userData);
+  localStorage.setItem('user', JSON.stringify(userData));
+  if (userData.token) {
+    localStorage.setItem('token', userData.token);
+  }
+  // Redirect admin straight to the admin panel
+  if (userData.role === 'ADMIN') {
+    window.location.href = '/admin/users';
+  }
+}
+
   function logout() {
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
   }
 
-  /**
-   * Returns true if the current user has the ADMIN role.
-   */
   function isAdmin() {
     return user?.role === 'ADMIN';
   }
@@ -62,10 +121,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-/**
- * Hook to access auth context from any component.
- * Usage: const { user, login, logout, isAdmin } = useAuth();
- */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

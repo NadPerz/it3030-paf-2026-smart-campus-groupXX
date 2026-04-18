@@ -1,35 +1,56 @@
 package com.smartcampus.service;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import org.springframework.stereotype.Service;
 
-/**
- * QR code generation and verification service — Member 2 responsibility (innovation feature).
- *
- * TODO (Member 2): Implement using the ZXing library (already in pom.xml):
- *
- *   generateQRCode(Long bookingId):
- *     1. Create a payload string (e.g. "booking:{bookingId}:{uuid}")
- *     2. Use com.google.zxing.qrcode.QRCodeWriter to encode the payload
- *     3. Use MatrixToImageWriter to render to a ByteArrayOutputStream as PNG
- *     4. Base64-encode the PNG bytes and return as a data URI string
- *        (e.g. "data:image/png;base64,<encoded>")
- *
- *   verifyQRCode(String token):
- *     1. Decode the token to extract bookingId
- *     2. Look up the booking in BookingRepository
- *     3. Validate that the booking is APPROVED and not already checked in
- *     4. Return the booking or throw BadRequestException on failure
- */
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Base64;
+import javax.imageio.ImageIO;
+
 @Service
 public class QRCodeService {
 
-    public String generateQRCode(Long bookingId) {
-        // TODO (Member 2): Implement using ZXing
-        throw new UnsupportedOperationException("TODO: Member 2 — implement generateQRCode()");
+    private static final String BASE_URL = "http://localhost:3000";
+
+    /**
+     * Generates a base64-encoded PNG QR code.
+     * Encodes a URL so iOS/Android camera opens it directly in browser.
+     */
+    public String generateQRCode(String bookingId) {
+        try {
+            String qrContent = BASE_URL + "/check-in?bookingId=" + bookingId;
+            QRCodeWriter writer = new QRCodeWriter();
+            BitMatrix matrix = writer.encode(qrContent, BarcodeFormat.QR_CODE, 250, 250);
+            BufferedImage image = MatrixToImageWriter.toBufferedImage(matrix);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(image, "PNG", baos);
+            return Base64.getEncoder().encodeToString(baos.toByteArray());
+        } catch (WriterException | IOException e) {
+            throw new RuntimeException("Failed to generate QR code for booking: " + bookingId, e);
+        }
     }
 
-    public Long verifyQRCode(String token) {
-        // TODO (Member 2): Implement — decode and validate QR token, return bookingId
-        throw new UnsupportedOperationException("TODO: Member 2 — implement verifyQRCode()");
+    /**
+     * Extracts bookingId from QR token.
+     * Supports URL format: http://localhost:3000/check-in?bookingId=xxx
+     */
+    public String verifyQRCode(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Invalid QR token");
+        }
+        if (token.contains("bookingId=")) {
+            String[] parts = token.split("bookingId=");
+            if (parts.length > 1) return parts[1].split("&")[0];
+        }
+        if (token.startsWith("SMARTCAMPUS:BOOKING:")) {
+            return token.substring("SMARTCAMPUS:BOOKING:".length());
+        }
+        return token;
     }
 }
