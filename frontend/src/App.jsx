@@ -29,9 +29,12 @@ import MyBookingsPage from "./pages/MyBookingsPage";
 import AdminBookingsPage from "./pages/AdminBookingsPage";
 import QRCheckInPage from "./pages/QRCheckInPage";
 
-// Member 3 — Uncomment when pages are ready:
-// import TicketsPage from './pages/TicketsPage';
-// import TicketDetailsPage from './pages/TicketDetailsPage';
+// Member 3 — Ticket pages
+import MyTicketsPage from "./pages/MyTicketsPage";
+import CreateTicketPage from "./pages/CreateTicketPage";
+import TicketDetailPage from "./pages/TicketDetailPage";
+import AdminTicketsPage from "./pages/AdminTicketsPage";
+import TechnicianDashboard from "./pages/TechnicianDashboard";
 
 function App() {
   return (
@@ -82,9 +85,39 @@ function App() {
               }
             />
 
-            {/* Member 3 */}
-            {/* <Route path="/tickets" element={<TicketsPage />} /> */}
-            {/* <Route path="/tickets/:id" element={<TicketDetailsPage />} /> */}
+            {/* ── MEMBER 3 — TICKET ROUTES ── */}
+            <Route
+              path="/tickets"
+              element={
+                <ProtectedRoute>
+                  <MyTicketsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets/new"
+              element={
+                <ProtectedRoute>
+                  <CreateTicketPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets/:id"
+              element={
+                <ProtectedRoute>
+                  <TicketDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/technician"
+              element={
+                <ProtectedRoute>
+                  <TechnicianDashboard />
+                </ProtectedRoute>
+              }
+            />
 
             {/* ── Admin routes — persistent sidebar layout ── */}
             <Route
@@ -117,8 +150,23 @@ function App() {
               {/* Member 2 */}
               <Route path="bookings" element={<AdminBookingsPage />} />
 
-              {/* Member 3 — add when ready: */}
-              {/* <Route path="tickets" element={<AdminTicketsPage />} /> */}
+              {/* Member 3 — Tickets */}
+              <Route
+                path="tickets"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <AdminTicketsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/tickets/:id"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <TicketDetailPage />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
           </Routes>
         </div>
