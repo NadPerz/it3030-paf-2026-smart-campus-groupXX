@@ -20,11 +20,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import UserManagementPage from "./pages/UserManagementPage";
 import AuditLogPage from "./pages/AuditLogPage";
-
-// Member 1 — Uncomment when pages are ready:
-// import ResourcesPage from './pages/ResourcesPage';
-
-// Member 2
+import ResourcesPage from './pages/ResourcesPage';
 import MyBookingsPage from "./pages/MyBookingsPage";
 import AdminBookingsPage from "./pages/AdminBookingsPage";
 import QRCheckInPage from "./pages/QRCheckInPage";
@@ -50,8 +46,6 @@ function App() {
             <Route path="/verify-otp" element={<VerifyOtpPage />} />
             <Route path="/pending-approval" element={<PendingApprovalPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
-
-            {/* ── Member 2 — QR check-in (public so scanned QR works without login) ── */}
             <Route path="/check-in" element={<QRCheckInPage />} />
 
             {/* ── User routes ── */}
@@ -139,15 +133,8 @@ function App() {
               />
 
               <Route path="users" element={<UserManagementPage />} />
-              <Route
-                path="notifications"
-                element={<AdminNotificationsPage />}
-              />
-
-              {/* Member 1 — add when ready: */}
-              {/* <Route path="resources" element={<AdminResourcesPage />} /> */}
-
-              {/* Member 2 */}
+              <Route path="notifications" element={<AdminNotificationsPage />} />
+              <Route path="resources" element={<ResourcesPage />} />
               <Route path="bookings" element={<AdminBookingsPage />} />
 
               {/* Member 3 — Tickets */}
