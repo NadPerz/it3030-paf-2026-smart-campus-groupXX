@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiBell, FiCheck, FiTrash2, FiCheckCircle } from 'react-icons/fi';
+import {
+  FiBell, FiCheck, FiTrash2, FiCheckCircle,
+  FiUser, FiEdit2, FiKey, FiCalendar, FiX,
+  FiClock, FiUnlock, FiAlertTriangle, FiTag,
+  FiMessageSquare, FiSlash, FiUserCheck,
+} from 'react-icons/fi';
 import { notificationService } from '../../services/notificationService';
 import { soundService } from '../../services/soundService';
 
@@ -9,6 +14,47 @@ import { soundService } from '../../services/soundService';
  * Uses SSE (fetch + ReadableStream) for real-time updates.
  * Falls back to polling every 30s if SSE disconnects.
  */
+
+const TYPE_TO_COLOR = {
+  NEW_USER_PENDING: { color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+  USER_PROFILE_UPDATED: { color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
+  ACCOUNT_APPROVED: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  ACCOUNT_SUSPENDED: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  ACCOUNT_REACTIVATED: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  ACCOUNT_PENDING: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  PROFILE_UPDATED: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  ROLE_CHANGED: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  BOOKING_APPROVED: { color: '#059669', bg: '#ecfdf5', border: '#6ee7b7' },
+  BOOKING_REJECTED: { color: '#059669', bg: '#ecfdf5', border: '#6ee7b7' },
+  BOOKING_CREATED: { color: '#059669', bg: '#ecfdf5', border: '#6ee7b7' },
+  BOOKING_CANCELLED: { color: '#059669', bg: '#ecfdf5', border: '#6ee7b7' },
+  TICKET_STATUS_CHANGED: { color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  TICKET_COMMENT: { color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  RESOURCE_OUT_OF_SERVICE: { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+};
+
+function getTypeIcon(type) {
+  const size = 15;
+  const icons = {
+    ACCOUNT_APPROVED:        <FiUserCheck size={size} />,
+    ACCOUNT_SUSPENDED:       <FiSlash size={size} />,
+    ACCOUNT_REACTIVATED:     <FiUnlock size={size} />,
+    ACCOUNT_PENDING:         <FiClock size={size} />,
+    NEW_USER_PENDING:        <FiUser size={size} />,
+    PROFILE_UPDATED:         <FiEdit2 size={size} />,
+    USER_PROFILE_UPDATED:    <FiEdit2 size={size} />,
+    ROLE_CHANGED:            <FiKey size={size} />,
+    BOOKING_APPROVED:        <FiCalendar size={size} />,
+    BOOKING_REJECTED:        <FiX size={size} />,
+    BOOKING_CREATED:         <FiCalendar size={size} />,
+    BOOKING_CANCELLED:       <FiX size={size} />,
+    TICKET_STATUS_CHANGED:   <FiTag size={size} />,
+    TICKET_COMMENT:          <FiMessageSquare size={size} />,
+    RESOURCE_OUT_OF_SERVICE: <FiAlertTriangle size={size} />,
+  };
+  return icons[type] || <FiBell size={size} />;
+}
+
 function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
@@ -162,17 +208,6 @@ function NotificationBell() {
     return `${Math.floor(h / 24)}d ago`;
   }
 
-  function getTypeIcon(type) {
-    const icons = {
-      ACCOUNT_APPROVED: '✅', ACCOUNT_SUSPENDED: '🚫', ACCOUNT_REACTIVATED: '🔓',
-      ACCOUNT_PENDING: '⏳', NEW_USER_PENDING: '👤', PROFILE_UPDATED: '✏️',
-      USER_PROFILE_UPDATED: '✏️', ROLE_CHANGED: '🔑', BOOKING_APPROVED: '📅',
-      BOOKING_REJECTED: '❌', TICKET_STATUS_CHANGED: '🎫', TICKET_COMMENT: '💬',
-      RESOURCE_OUT_OF_SERVICE: '⚠️',
-    };
-    return icons[type] || '🔔';
-  }
-
   // ── Render ───────────────────────────────────────
   return (
     <div className="nb-wrapper" ref={dropdownRef}>
@@ -193,7 +228,7 @@ function NotificationBell() {
           fontSize: '14px', opacity: 0.6, padding: '2px 4px',
         }}
       >
-        {soundService.isSoundEnabled() ? '🔔' : '🔕'}
+        {soundService.isSoundEnabled() ? '' : '🔕'}
       </button>
 
       {open && (
@@ -215,33 +250,42 @@ function NotificationBell() {
             ) : notifications.length === 0 ? (
               <p className="nb-empty">No notifications yet</p>
             ) : (
-              notifications.map(n => (
-                <div
-                  key={n.id}
-                  className={`nb-item ${!n.isRead ? 'nb-unread' : ''}`}
-                  onClick={() => handleItemClick(n)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={e => e.key === 'Enter' && handleItemClick(n)}
-                >
-                  <span className="nb-icon">{getTypeIcon(n.type)}</span>
-                  <div className="nb-body">
-                    <div className="nb-title">{n.title}</div>
-                    <div className="nb-msg">{n.message}</div>
-                    <div className="nb-time">{formatTime(n.createdAt)}</div>
-                  </div>
-                  <div className="nb-actions" onClick={e => e.stopPropagation()}>
-                    {!n.isRead && (
-                      <button className="nb-act" onClick={e => handleMarkAsRead(e, n.id)} title="Mark as read">
-                        <FiCheck size={13} />
+              notifications.map(n => {
+                const theme = TYPE_TO_COLOR[n.type] || { color: '#4f46e5', bg: '#eef2ff', border: '#c7d2fe' };
+                return (
+                  <div
+                    key={n.id}
+                    className={`nb-item ${!n.isRead ? 'nb-unread' : ''}`}
+                    onClick={() => handleItemClick(n)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && handleItemClick(n)}
+                  >
+                    <div className="nb-icon" style={{
+                      background: theme.bg,
+                      border: `1px solid ${theme.border}`,
+                      color: theme.color,
+                    }}>
+                      {getTypeIcon(n.type)}
+                    </div>
+                    <div className="nb-body">
+                      <div className="nb-title">{n.title}</div>
+                      <div className="nb-msg">{n.message}</div>
+                      <div className="nb-time">{formatTime(n.createdAt)}</div>
+                    </div>
+                    <div className="nb-actions" onClick={e => e.stopPropagation()}>
+                      {!n.isRead && (
+                        <button className="nb-act" onClick={e => handleMarkAsRead(e, n.id)} title="Mark as read">
+                          <FiCheck size={13} />
+                        </button>
+                      )}
+                      <button className="nb-act nb-del" onClick={e => handleDelete(e, n.id)} title="Delete">
+                        <FiTrash2 size={13} />
                       </button>
-                    )}
-                    <button className="nb-act nb-del" onClick={e => handleDelete(e, n.id)} title="Delete">
-                      <FiTrash2 size={13} />
-                    </button>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -257,7 +301,7 @@ function NotificationBell() {
       <style>{`
         .nb-wrapper { position: relative; display: inline-flex; align-items: center; }
         .nb-btn {
-          background: none; border: none; cursor: pointer; color: white;
+          background: none; border: none; cursor: pointer; color: black;
           display: flex; align-items: center; justify-content: center;
           padding: 6px; border-radius: 8px; position: relative; transition: background 0.2s;
         }
@@ -296,7 +340,11 @@ function NotificationBell() {
         .nb-item:hover { background: #f5f5ff; }
         .nb-unread { background: #fafbff; }
         .nb-unread .nb-title { font-weight: 700; color: #1e1b4b; }
-        .nb-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .nb-icon {
+          flex-shrink: 0; margin-top: 1px;
+          width: 30px; height: 30px; border-radius: 7px;
+          display: flex; align-items: center; justify-content: center;
+        }
         .nb-body { flex: 1; min-width: 0; }
         .nb-title { font-size: 13px; font-weight: 500; color: #111; margin-bottom: 2px; }
         .nb-msg {

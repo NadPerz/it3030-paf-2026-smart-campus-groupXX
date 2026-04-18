@@ -12,7 +12,6 @@ const CATEGORY_CONFIG = {
   USERS:    { label: 'Users',     color: '#0891b2', bg: '#ecfeff', border: '#a5f3fc' },
   BOOKINGS: { label: 'Bookings',  color: '#059669', bg: '#ecfdf5', border: '#6ee7b7' },
   TICKETS:  { label: 'Tickets',   color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
-  RESOURCES:{ label: 'Resources', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
   ACCOUNT:  { label: 'Account',   color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
 };
 
@@ -122,171 +121,218 @@ function NotificationsPage() {
   const totalUnread = notifications.filter(n => !n.isRead).length;
 
   return (
-    <div style={{ maxWidth: '720px', margin: '0 auto', padding: '32px 16px', display: 'flex', flexDirection: 'column', height: '100vh', boxSizing: 'border-box', overflow: 'hidden' }}>
+    <>
+      {/* ✅ THE ONLY CHANGE: stops the outer page from scrolling */}
+      <style>{`
+        html, body {
+          overflow: hidden !important;
+          height: 100%;
+          margin: 0;
+          padding: 0;
+        }
+      `}</style>
 
-      {/* Static top section */}
-      <div>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '700', margin: 0, color: '#111' }}>Notifications</h1>
-            {totalUnread > 0 && (
-              <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '14px' }}>
-                {totalUnread} unread notification{totalUnread !== 1 ? 's' : ''}
-              </p>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button
-              onClick={() => setShowUnreadOnly(p => !p)}
-              style={{
-                padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '500',
-                cursor: 'pointer', border: '1px solid',
-                background: showUnreadOnly ? '#f0f0ff' : 'white',
-                color: showUnreadOnly ? '#4f46e5' : '#6b7280',
-                borderColor: showUnreadOnly ? '#c7d2fe' : '#e5e7eb',
-              }}
-            >
-              {showUnreadOnly ? '● Unread only' : '○ Show all'}
-            </button>
-            {totalUnread > 0 && (
-              <button
-                onClick={handleMarkAllRead}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  background: '#f0f0ff', border: '1px solid #c7d2fe',
-                  color: '#4f46e5', padding: '7px 14px', borderRadius: '8px',
-                  cursor: 'pointer', fontSize: '13px', fontWeight: '500',
-                }}
-              >
-                <FiCheckCircle size={15} /> Mark all as read
-              </button>
-            )}
-          </div>
-        </div>
+      <div style={{
+        fontFamily: 'Inter,system-ui,sans-serif',
+        background: '#F1F5F9',
+        height: 'calc(100vh - 65px)',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '32px 0',
+        boxSizing: 'border-box',
+      }}>
+        <div style={{
+          maxWidth: 800,
+          width: '100%',
+          margin: '0 auto',
+          padding: '0 24px',
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          boxSizing: 'border-box',
+          background: '#fff',
+          borderRadius: 16,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+          overflow: 'hidden',
+        }}>
 
-        {/* Category filter chips — sticky */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 10, background: 'white', paddingBottom: '12px', paddingTop: '4px' }}>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-              const unread = getUnreadCountForCategory(key);
-              const total = getCountForCategory(key);
-              const isActive = activeCategory === key;
-              return (
+          {/* ── Static top section ── */}
+          <div style={{ flexShrink: 0, padding: '28px 28px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h1 style={{ fontSize: '24px', fontWeight: '700', margin: 0, color: '#111' }}>Notifications</h1>
+                {totalUnread > 0 && (
+                  <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: '14px' }}>
+                    {totalUnread} unread notification{totalUnread !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button
-                  key={key}
-                  onClick={() => setActiveCategory(key)}
+                  onClick={() => setShowUnreadOnly(p => !p)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    padding: '6px 14px', borderRadius: '999px', fontSize: '13px',
-                    fontWeight: '500', cursor: 'pointer', border: '1px solid',
-                    background: isActive ? config.bg : 'white',
-                    color: isActive ? config.color : '#6b7280',
-                    borderColor: isActive ? config.border : '#e5e7eb',
-                    transition: 'all 0.15s',
+                    padding: '7px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: '500',
+                    cursor: 'pointer', border: '1px solid',
+                    background: showUnreadOnly ? '#f0f0ff' : 'white',
+                    color: showUnreadOnly ? '#4f46e5' : '#6b7280',
+                    borderColor: showUnreadOnly ? '#c7d2fe' : '#e5e7eb',
                   }}
                 >
-                  {config.label}
-                  <span style={{
-                    fontSize: '11px', fontWeight: '600',
-                    background: isActive ? config.color : '#f3f4f6',
-                    color: isActive ? 'white' : '#6b7280',
-                    padding: '1px 6px', borderRadius: '999px',
-                  }}>
-                    {total}
-                  </span>
-                  {unread > 0 && (
-                    <span style={{
-                      fontSize: '10px', fontWeight: '700',
-                      background: '#ef4444', color: 'white',
-                      padding: '1px 5px', borderRadius: '999px',
-                    }}>
-                      {unread}
-                    </span>
-                  )}
+                  {showUnreadOnly ? '● Unread only' : '○ Show all'}
                 </button>
-              );
-            })}
+                {totalUnread > 0 && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: '#f0f0ff', border: '1px solid #c7d2fe',
+                      color: '#4f46e5', padding: '7px 14px', borderRadius: '8px',
+                      cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+                    }}
+                  >
+                    <FiCheckCircle size={15} /> Mark all as read
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Category tabs */}
+            <div style={{ display: 'flex', borderBottom: '2px solid #e5e7eb', gap: '0' }}>
+              {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
+                const unread = getUnreadCountForCategory(key);
+                const total = getCountForCategory(key);
+                const isActive = activeCategory === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setActiveCategory(key)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      padding: '10px 16px',
+                      fontSize: '13px', fontWeight: isActive ? '600' : '500',
+                      cursor: 'pointer',
+                      border: 'none',
+                      borderBottom: isActive ? `2px solid ${config.color}` : '2px solid transparent',
+                      marginBottom: '-2px',
+                      background: 'transparent',
+                      color: isActive ? config.color : '#6b7280',
+                      transition: 'all 0.15s',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {config.label}
+                    <span style={{
+                      fontSize: '11px', fontWeight: '600',
+                      background: isActive ? config.bg : '#f3f4f6',
+                      color: isActive ? config.color : '#6b7280',
+                      border: isActive ? `1px solid ${config.border}` : '1px solid transparent',
+                      padding: '1px 6px', borderRadius: '999px',
+                    }}>
+                      {total}
+                    </span>
+                    {unread > 0 && (
+                      <span style={{
+                        fontSize: '10px', fontWeight: '700',
+                        background: '#ef4444', color: 'white',
+                        padding: '1px 5px', borderRadius: '999px',
+                      }}>
+                        {unread}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
+          {/* ── Scrollable notifications list only ── */}
+          <div style={{
+            overflowY: 'auto',
+            flex: 1,
+            minHeight: 0,
+            padding: '16px 28px 28px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#CBD5E1 transparent',
+          }}>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af' }}>Loading notifications...</div>
+            ) : error ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444', background: '#fff5f5', borderRadius: '12px', border: '1px solid #fecaca' }}>
+                {error}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', background: '#fafafa', borderRadius: '12px', border: '1px solid #f0f0f0' }}>
+                <FiBell size={36} style={{ marginBottom: '12px', opacity: 0.4 }} />
+                <p style={{ margin: 0, fontWeight: '500' }}>No notifications in this category</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {filtered.map(n => {
+                  const cat = getCategory(n.type);
+                  const catCfg = CATEGORY_CONFIG[cat];
+                  return (
+                    <div key={n.id} style={{
+                      display: 'flex', alignItems: 'flex-start', gap: '14px',
+                      padding: '16px', borderRadius: '12px',
+                      background: !n.isRead ? '#fafbff' : 'white',
+                      border: `1px solid ${!n.isRead ? '#e0e7ff' : '#f0f0f0'}`,
+                    }}>
+                      <div style={{
+                        flexShrink: 0, marginTop: '2px',
+                        width: '36px', height: '36px', borderRadius: '8px',
+                        background: catCfg.bg, border: `1px solid ${catCfg.border}`,
+                        color: catCfg.color,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {getTypeIcon(n.type)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: !n.isRead ? '700' : '600', color: '#111' }}>
+                            {n.title}
+                          </span>
+                          <span style={{
+                            fontSize: '10px', fontWeight: '600', padding: '2px 7px',
+                            borderRadius: '999px', letterSpacing: '0.4px',
+                            background: catCfg.bg, color: catCfg.color, border: `1px solid ${catCfg.border}`,
+                          }}>
+                            {catCfg.label}
+                          </span>
+                          {!n.isRead && (
+                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#4f46e5', display: 'inline-block', flexShrink: 0 }} />
+                          )}
+                        </div>
+                        <p style={{ margin: '0 0 6px', fontSize: '13px', color: '#4b5563', lineHeight: '1.5' }}>{n.message}</p>
+                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{formatTime(n.createdAt)}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                        {!n.isRead && (
+                          <button onClick={() => handleMarkAsRead(n.id)} title="Mark as read"
+                            style={{ background: 'none', border: '1px solid #e5e7eb', cursor: 'pointer', color: '#6b7280', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
+                            onMouseOver={e => { e.currentTarget.style.color = '#4f46e5'; e.currentTarget.style.borderColor = '#c7d2fe'; }}
+                            onMouseOut={e => { e.currentTarget.style.color = '#6b7280'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
+                            <FiCheck size={14} />
+                          </button>
+                        )}
+                        <button onClick={() => handleDelete(n.id)} title="Delete"
+                          style={{ background: 'none', border: '1px solid #e5e7eb', cursor: 'pointer', color: '#6b7280', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
+                          onMouseOver={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = '#fca5a5'; }}
+                          onMouseOut={e => { e.currentTarget.style.color = '#6b7280'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
+                          <FiTrash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
-
-      {/* Scrollable notifications list */}
-      <div style={{ overflowY: 'auto', flex: 1 }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af' }}>Loading notifications...</div>
-        ) : error ? (
-          <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444', background: '#fff5f5', borderRadius: '12px', border: '1px solid #fecaca' }}>
-            {error}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: '#9ca3af', background: '#fafafa', borderRadius: '12px', border: '1px solid #f0f0f0' }}>
-            <FiBell size={36} style={{ marginBottom: '12px', opacity: 0.4 }} />
-            <p style={{ margin: 0, fontWeight: '500' }}>No notifications in this category</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {filtered.map(n => {
-              const cat = getCategory(n.type);
-              const catCfg = CATEGORY_CONFIG[cat];
-              return (
-                <div key={n.id} style={{
-                  display: 'flex', alignItems: 'flex-start', gap: '14px',
-                  padding: '16px', borderRadius: '12px',
-                  background: !n.isRead ? '#fafbff' : 'white',
-                  border: `1px solid ${!n.isRead ? '#e0e7ff' : '#f0f0f0'}`,
-                }}>
-                  <div style={{
-                    flexShrink: 0, marginTop: '2px',
-                    width: '36px', height: '36px', borderRadius: '8px',
-                    background: catCfg.bg, border: `1px solid ${catCfg.border}`,
-                    color: catCfg.color,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {getTypeIcon(n.type)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: !n.isRead ? '700' : '600', color: '#111' }}>
-                        {n.title}
-                      </span>
-                      <span style={{
-                        fontSize: '10px', fontWeight: '600', padding: '2px 7px',
-                        borderRadius: '999px', letterSpacing: '0.4px',
-                        background: catCfg.bg, color: catCfg.color, border: `1px solid ${catCfg.border}`,
-                      }}>
-                        {catCfg.label}
-                      </span>
-                      {!n.isRead && (
-                        <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#4f46e5', display: 'inline-block', flexShrink: 0 }} />
-                      )}
-                    </div>
-                    <p style={{ margin: '0 0 6px', fontSize: '13px', color: '#4b5563', lineHeight: '1.5' }}>{n.message}</p>
-                    <span style={{ fontSize: '11px', color: '#9ca3af' }}>{formatTime(n.createdAt)}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                    {!n.isRead && (
-                      <button onClick={() => handleMarkAsRead(n.id)} title="Mark as read"
-                        style={{ background: 'none', border: '1px solid #e5e7eb', cursor: 'pointer', color: '#6b7280', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
-                        onMouseOver={e => { e.currentTarget.style.color = '#4f46e5'; e.currentTarget.style.borderColor = '#c7d2fe'; }}
-                        onMouseOut={e => { e.currentTarget.style.color = '#6b7280'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
-                        <FiCheck size={14} />
-                      </button>
-                    )}
-                    <button onClick={() => handleDelete(n.id)} title="Delete"
-                      style={{ background: 'none', border: '1px solid #e5e7eb', cursor: 'pointer', color: '#6b7280', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center' }}
-                      onMouseOver={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = '#fca5a5'; }}
-                      onMouseOut={e => { e.currentTarget.style.color = '#6b7280'; e.currentTarget.style.borderColor = '#e5e7eb'; }}>
-                      <FiTrash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
+    </>
   );
 }
 

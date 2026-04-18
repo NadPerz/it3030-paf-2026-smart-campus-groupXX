@@ -6,6 +6,7 @@ import com.smartcampus.exception.ResourceNotFoundException;
 import com.smartcampus.exception.UnauthorizedException;
 import com.smartcampus.model.Booking;
 import com.smartcampus.model.Notification;
+import com.smartcampus.model.Ticket;
 import com.smartcampus.model.User;
 import com.smartcampus.repository.NotificationRepository;
 import com.smartcampus.repository.UserRepository;
@@ -531,6 +532,100 @@ public class NotificationService {
         // TICKET NOTIFICATION TRIGGERS
         // ─────────────────────────────────────────────
 
+        // ── notifyTicketCreated ──────────────────────────────────────────────
+        public void notifyTicketCreated(String userId, Ticket ticket) {
+                createNotification(
+                                userId,
+                                "Ticket Submitted",
+                                "Your ticket \"" + ticket.getTitle() + "\" has been submitted and is awaiting review.",
+                                "TICKET_STATUS_CHANGED",
+                                ticket.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "New Ticket Submitted",
+                                        "A new ticket \"" + ticket.getTitle() + "\" has been submitted by "
+                                                        + ticket.getUserName() + " and is awaiting review.",
+                                        "TICKET_STATUS_CHANGED",
+                                        ticket.getId());
+                }
+
+                // Email notification to user
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Ticket Submitted — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Your ticket \"" + ticket.getTitle()
+                                                                + "\" has been submitted successfully.\n\n"
+                                                                + "Category: " + ticket.getCategory() + "\n"
+                                                                + "Priority: " + ticket.getPriority() + "\n\n"
+                                                                + "You will be notified once it is reviewed.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send ticket created email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
+        }
+
+        // ── notifyTicketStatusChanged (Ticket overload) ──────────────────────
+        public void notifyTicketStatusChanged(String userId, Ticket ticket) {
+                String newStatus = ticket.getStatus().name();
+
+                createNotification(
+                                userId,
+                                "Ticket Status Updated",
+                                "Your ticket \"" + ticket.getTitle() + "\" status has been updated to: "
+                                                + newStatus + ".",
+                                "TICKET_STATUS_CHANGED",
+                                ticket.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "Ticket Status Updated",
+                                        "Ticket \"" + ticket.getTitle() + "\" by " + ticket.getUserName()
+                                                        + " has been updated to: " + newStatus + ".",
+                                        "TICKET_STATUS_CHANGED",
+                                        ticket.getId());
+                }
+
+                // Email notification to user
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Ticket Update — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Your ticket \"" + ticket.getTitle()
+                                                                + "\" status has been updated to: " + newStatus
+                                                                + ".\n\n"
+                                                                + (ticket.getResolutionNotes() != null
+                                                                                ? "Notes: " + ticket
+                                                                                                .getResolutionNotes()
+                                                                                                + "\n\n"
+                                                                                : "")
+                                                                + "Log in to SmartCampus to view the full details.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send ticket status email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
+        }
+
+        // ── notifyTicketStatusChanged (String overload — kept for compatibility) ──
         public void notifyTicketStatusChanged(String userId, String ticketId, String newStatus) {
                 createNotification(
                                 userId,
@@ -557,6 +652,132 @@ public class NotificationService {
                 });
         }
 
+        // ── notifyTicketRejected ─────────────────────────────────────────────
+        public void notifyTicketRejected(String userId, Ticket ticket) {
+                createNotification(
+                                userId,
+                                "Ticket Rejected",
+                                "Your ticket \"" + ticket.getTitle() + "\" has been rejected."
+                                                + (ticket.getRejectionReason() != null
+                                                                ? " Reason: " + ticket.getRejectionReason()
+                                                                : " Please contact admin for details."),
+                                "TICKET_STATUS_CHANGED",
+                                ticket.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "Ticket Rejected",
+                                        "Ticket \"" + ticket.getTitle() + "\" by " + ticket.getUserName()
+                                                        + " has been rejected.",
+                                        "TICKET_STATUS_CHANGED",
+                                        ticket.getId());
+                }
+
+                // Email notification to user
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Ticket Rejected — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Unfortunately, your ticket \"" + ticket.getTitle()
+                                                                + "\" has been rejected.\n\n"
+                                                                + (ticket.getRejectionReason() != null
+                                                                                ? "Reason: " + ticket
+                                                                                                .getRejectionReason()
+                                                                                                + "\n\n"
+                                                                                : "")
+                                                                + "Please contact an administrator for more details.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send ticket rejected email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
+        }
+
+        // ── notifyTicketAssigned (notify ticket owner) ───────────────────────
+        public void notifyTicketAssigned(String userId, Ticket ticket) {
+                createNotification(
+                                userId,
+                                "Ticket Assigned",
+                                "Your ticket \"" + ticket.getTitle() + "\" has been assigned to "
+                                                + ticket.getAssignedToName() + " and is now in progress.",
+                                "TICKET_STATUS_CHANGED",
+                                ticket.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "Ticket Assigned",
+                                        "Ticket \"" + ticket.getTitle() + "\" by " + ticket.getUserName()
+                                                        + " has been assigned to " + ticket.getAssignedToName() + ".",
+                                        "TICKET_STATUS_CHANGED",
+                                        ticket.getId());
+                }
+
+                // Email notification to user
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "Ticket Assigned — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + "Your ticket \"" + ticket.getTitle()
+                                                                + "\" has been assigned to "
+                                                                + ticket.getAssignedToName()
+                                                                + " and is now in progress.\n\n"
+                                                                + "Log in to SmartCampus to view the full details.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send ticket assigned email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
+        }
+
+        // ── notifyTechnicianAssigned (notify assigned technician) ────────────
+        public void notifyTechnicianAssigned(String technicianId, Ticket ticket) {
+                createNotification(
+                                technicianId,
+                                "New Ticket Assigned to You",
+                                "You have been assigned to ticket \"" + ticket.getTitle()
+                                                + "\" submitted by " + ticket.getUserName()
+                                                + ". Please review and take action.",
+                                "TICKET_STATUS_CHANGED",
+                                ticket.getId());
+
+                // Email notification to technician
+                userRepository.findById(technicianId).ifPresent(tech -> {
+                        try {
+                                emailService.sendEmail(
+                                                tech.getEmail(),
+                                                "New Ticket Assignment — SmartCampus",
+                                                "Hi " + tech.getName() + ",\n\n"
+                                                                + "You have been assigned a new ticket:\n\n"
+                                                                + "Title: " + ticket.getTitle() + "\n"
+                                                                + "Category: " + ticket.getCategory() + "\n"
+                                                                + "Priority: " + ticket.getPriority() + "\n"
+                                                                + "Submitted by: " + ticket.getUserName() + "\n\n"
+                                                                + "Please log in to SmartCampus to review and take action.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send technician assigned email to {}: {}", tech.getEmail(),
+                                                e.getMessage());
+                        }
+                });
+        }
+
+        // ── notifyNewTicketComment ───────────────────────────────────────────
         public void notifyNewTicketComment(String userId, String ticketId, String commenterName) {
                 createNotification(
                                 userId,
@@ -564,6 +785,34 @@ public class NotificationService {
                                 commenterName + " added a comment on your ticket.",
                                 "TICKET_COMMENT",
                                 ticketId);
+        }
+
+        // ── notifyNewComment (Ticket overload) ───────────────────────────────
+        public void notifyNewComment(String userId, Ticket ticket, String commenterName) {
+                createNotification(
+                                userId,
+                                "New Comment on Your Ticket",
+                                commenterName + " added a comment on your ticket \"" + ticket.getTitle() + "\".",
+                                "TICKET_COMMENT",
+                                ticket.getId());
+
+                // Email notification to ticket owner
+                userRepository.findById(userId).ifPresent(user -> {
+                        try {
+                                emailService.sendEmail(
+                                                user.getEmail(),
+                                                "New Comment on Your Ticket — SmartCampus",
+                                                "Hi " + user.getName() + ",\n\n"
+                                                                + commenterName
+                                                                + " has added a comment on your ticket \""
+                                                                + ticket.getTitle() + "\".\n\n"
+                                                                + "Log in to SmartCampus to view the comment.\n\n"
+                                                                + "SmartCampus Team");
+                        } catch (Exception e) {
+                                log.warn("Failed to send ticket comment email to {}: {}", user.getEmail(),
+                                                e.getMessage());
+                        }
+                });
         }
 
         // ─────────────────────────────────────────────
