@@ -340,7 +340,7 @@ public class NotificationService {
                 }
         }
 
-// ─────────────────────────────────────────────
+        // ─────────────────────────────────────────────
         // BOOKING NOTIFICATION TRIGGERS
         // ─────────────────────────────────────────────
 
@@ -351,6 +351,20 @@ public class NotificationService {
                                 "Your booking for \"" + resourceName + "\" has been approved.",
                                 "BOOKING_APPROVED",
                                 bookingId);
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "Booking Approved",
+                                        "The booking for \"" + resourceName + "\" by user " + userId
+                                                        + " has been approved.",
+                                        "BOOKING_APPROVED",
+                                        bookingId);
+                }
 
                 // Email notification
                 userRepository.findById(userId).ifPresent(user -> {
@@ -378,6 +392,20 @@ public class NotificationService {
                                                 + "\" has been rejected. Please contact admin for details.",
                                 "BOOKING_REJECTED",
                                 bookingId);
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "Booking Rejected",
+                                        "The booking for \"" + resourceName + "\" by user " + userId
+                                                        + " has been rejected.",
+                                        "BOOKING_REJECTED",
+                                        bookingId);
+                }
 
                 // Email notification
                 userRepository.findById(userId).ifPresent(user -> {
@@ -417,9 +445,25 @@ public class NotificationService {
                 createNotification(
                                 userId,
                                 "Booking Submitted",
-                                "Your booking for \"" + booking.getResourceName() + "\" has been submitted and is pending approval.",
+                                "Your booking for \"" + booking.getResourceName()
+                                                + "\" has been submitted and is pending approval.",
                                 "BOOKING_CREATED",
                                 booking.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "New Booking Pending Approval",
+                                        "A new booking for \"" + booking.getResourceName()
+                                                        + "\" has been submitted by user " + userId
+                                                        + " and is awaiting approval.",
+                                        "BOOKING_CREATED",
+                                        booking.getId());
+                }
 
                 userRepository.findById(userId).ifPresent(user -> {
                         try {
@@ -429,7 +473,8 @@ public class NotificationService {
                                                 "Hi " + user.getName() + ",\n\n"
                                                                 + "Your booking for \"" + booking.getResourceName()
                                                                 + "\" on " + booking.getBookingDate()
-                                                                + " (" + booking.getStartTime() + " – " + booking.getEndTime()
+                                                                + " (" + booking.getStartTime() + " – "
+                                                                + booking.getEndTime()
                                                                 + ") has been submitted.\n\n"
                                                                 + "You will be notified once it is reviewed by an admin.\n\n"
                                                                 + "SmartCampus Team");
@@ -445,9 +490,24 @@ public class NotificationService {
                 createNotification(
                                 userId,
                                 "Booking Cancelled",
-                                "Your booking for \"" + booking.getResourceName() + "\" has been cancelled by an admin.",
+                                "Your booking for \"" + booking.getResourceName()
+                                                + "\" has been cancelled by an admin.",
                                 "BOOKING_CANCELLED",
                                 booking.getId());
+
+                List<User> admins = userRepository.findAll().stream()
+                                .filter(u -> u.getRole() == UserRole.ADMIN)
+                                .collect(Collectors.toList());
+
+                for (User admin : admins) {
+                        createNotification(
+                                        admin.getId(),
+                                        "Booking Cancelled",
+                                        "The booking for \"" + booking.getResourceName() + "\" by user " + userId
+                                                        + " has been cancelled.",
+                                        "BOOKING_CANCELLED",
+                                        booking.getId());
+                }
 
                 userRepository.findById(userId).ifPresent(user -> {
                         try {
