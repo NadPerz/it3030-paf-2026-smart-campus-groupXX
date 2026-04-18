@@ -58,12 +58,4 @@ package-lock.json
 # OS
 .DS_Store
 Thumbs.db
-
-#application properties 
-backend\src\main\resources\application.properties
-
-# ...existing entries...
-application.properties
-application-*.properties
-*.properties
-!application.properties.template
+backend/src/main/resources/application.properties
