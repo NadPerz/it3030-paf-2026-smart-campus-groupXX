@@ -20,18 +20,10 @@ import NotificationsPage from "./pages/NotificationsPage";
 import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import UserManagementPage from "./pages/UserManagementPage";
 import AuditLogPage from "./pages/AuditLogPage";
-
-
-// import ResourcesPage from './pages/ResourcesPage';
-
-// Member 2
+import ResourcesPage from './pages/ResourcesPage';
 import MyBookingsPage from "./pages/MyBookingsPage";
 import AdminBookingsPage from "./pages/AdminBookingsPage";
 import QRCheckInPage from "./pages/QRCheckInPage";
-
-// Member 3 — Uncomment when pages are ready:
-// import TicketsPage from './pages/TicketsPage';
-// import TicketDetailsPage from './pages/TicketDetailsPage';
 
 function App() {
   return (
@@ -47,78 +39,21 @@ function App() {
             <Route path="/verify-otp" element={<VerifyOtpPage />} />
             <Route path="/pending-approval" element={<PendingApprovalPage />} />
             <Route path="/access-denied" element={<AccessDeniedPage />} />
-
-            {/* ── Member 2 — QR check-in (public so scanned QR works without login) ── */}
             <Route path="/check-in" element={<QRCheckInPage />} />
 
             {/* ── User routes ── */}
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <NotificationsPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+            <Route path="/resources" element={<ResourcesPage />} />
+            <Route path="/bookings" element={<ProtectedRoute><MyBookingsPage /></ProtectedRoute>} />
 
-            {/* Member 1 */}
-            {/* <Route path="/resources" element={<ResourcesPage />} /> */}
-
-            {/* Member 2 */}
-            <Route
-              path="/bookings"
-              element={
-                <ProtectedRoute>
-                  <MyBookingsPage />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Member 3 */}
-            {/* <Route path="/tickets" element={<TicketsPage />} /> */}
-            {/* <Route path="/tickets/:id" element={<TicketDetailsPage />} /> */}
-
-            {/* ── Admin routes — persistent sidebar layout ── */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute adminOnly>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              {/* Member 4 — Audit Log */}
-              <Route
-                path="audit-log"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <AuditLogPage />
-                  </ProtectedRoute>
-                }
-              />
-
+            {/* ── Admin routes ── */}
+            <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
+              <Route path="audit-log" element={<ProtectedRoute adminOnly><AuditLogPage /></ProtectedRoute>} />
               <Route path="users" element={<UserManagementPage />} />
-              <Route
-                path="notifications"
-                element={<AdminNotificationsPage />}
-              />
-
-              {/* Member 1 — add when ready: */}
-              {/* <Route path="resources" element={<AdminResourcesPage />} /> */}
-
-              {/* Member 2 */}
+              <Route path="notifications" element={<AdminNotificationsPage />} />
+              <Route path="resources" element={<ResourcesPage />} />
               <Route path="bookings" element={<AdminBookingsPage />} />
-
-              {/* Member 3 — add when ready: */}
-              {/* <Route path="tickets" element={<AdminTicketsPage />} /> */}
             </Route>
           </Routes>
         </div>
