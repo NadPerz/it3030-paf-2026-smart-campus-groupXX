@@ -9,7 +9,7 @@ import Navbar from './components/common/Navbar';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 
-// Member 1 — Uncomment when pages are ready:
+
 // import ResourcesPage from './pages/ResourcesPage';
 
 // Member 2 — Uncomment when pages are ready:
