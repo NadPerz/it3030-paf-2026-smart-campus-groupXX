@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { resourceService } from '../services/resourceService';
+import BookingFormModal from './BookingFormPage';
 
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -68,7 +69,7 @@ const FILTER_TABS = [
   { key: 'OTHER',        label: 'Other' },
 ];
 
-function ResourceCard({ resource, isAdmin, onEdit, onDelete, onToggleStatus }) {
+function ResourceCard({ resource, isAdmin, onEdit, onDelete, onToggleStatus, onBookNow }) {
   const navigate = useNavigate();
   const cfg = TYPE_CONFIG[resource.type] || TYPE_CONFIG.OTHER;
   const isActive = resource.status === 'ACTIVE';
@@ -135,7 +136,7 @@ function ResourceCard({ resource, isAdmin, onEdit, onDelete, onToggleStatus }) {
           {/* Book Now — ONLY for non-admin users */}
           {isActive && !isAdmin && (
             <button
-              onClick={() => navigate('/bookings')}
+              onClick={() => onBookNow(resource)}
               style={{ flex: 1, padding: '9px 14px', borderRadius: '9px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#0F172A', color: 'white', border: 'none', transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = '#1E293B'}
               onMouseLeave={e => e.currentTarget.style.background = '#0F172A'}
@@ -262,6 +263,8 @@ function ResourcesPage() {
   const [statusFilter, setStatusFilter]       = useState('');
   const [showForm, setShowForm]               = useState(false);
   const [editingResource, setEditingResource] = useState(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedBookingResource, setSelectedBookingResource] = useState(null);
 
   async function fetchResources() {
     setLoading(true); setError('');
@@ -403,13 +406,21 @@ function ResourcesPage() {
             {filtered.map(resource => (
               <ResourceCard key={resource.id} resource={resource} isAdmin={isAdmin}
                 onEdit={r => { setEditingResource(r); setShowForm(true); }}
-                onDelete={handleDelete} onToggleStatus={handleToggleStatus} />
+                onDelete={handleDelete} onToggleStatus={handleToggleStatus}
+                onBookNow={(r) => { setSelectedBookingResource(r); setBookingModalOpen(true); }} />
             ))}
           </div>
         )}
       </div>
 
-      {/* Modal */}
+      {/* Booking Modal */}
+      <BookingFormModal 
+        isOpen={bookingModalOpen}
+        resourceId={selectedBookingResource?.id}
+        resourceName={selectedBookingResource?.name}
+        onClose={() => setBookingModalOpen(false)}
+        onSuccess={() => { fetchResources(); setBookingModalOpen(false); }}
+      />
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '20px', backdropFilter: 'blur(4px)' }}>
           <div style={{ background: 'white', borderRadius: '20px', padding: '32px', width: '100%', maxWidth: '560px', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.18)' }}>
