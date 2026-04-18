@@ -49,6 +49,8 @@ function App() {
 
             {/* ── User routes ── */}
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/overview" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/edit"     element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
 
             {/* Member 1 */}
