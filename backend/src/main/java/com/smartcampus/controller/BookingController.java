@@ -46,6 +46,13 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getAllBookings());
     }
 
+    /** GET /api/bookings/by-resource/{resourceId} — Get all bookings for a specific resource (shows availability) */
+    @GetMapping("/by-resource/{resourceId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<BookingResponseDTO>> getResourceBookings(@PathVariable String resourceId) {
+        return ResponseEntity.ok(bookingService.getBookingsByResourceId(resourceId));
+    }
+
     /** GET /api/bookings/{id} — Get booking by ID */
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")

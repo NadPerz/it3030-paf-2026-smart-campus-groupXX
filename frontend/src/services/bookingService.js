@@ -9,6 +9,7 @@ export const bookingService = {
   create: (data) => api.post('/bookings', data),
   getMyBookings: () => api.get('/bookings/my'),
   getAllBookings: () => api.get('/bookings'),
+  getResourceBookings: (resourceId) => api.get(`/bookings/by-resource/${resourceId}`),
   getById: (id) => api.get(`/bookings/${id}`),
   approve: (id, data) => api.put(`/bookings/${id}/approve`, data),
   reject: (id, data) => api.put(`/bookings/${id}/reject`, data),

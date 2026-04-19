@@ -117,6 +117,18 @@ public class BookingService {
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
+    // ── GET BOOKINGS BY RESOURCE ID (for availability heatmap) ────────
+    public List<BookingResponseDTO> getBookingsByResourceId(String resourceId) {
+        // Check if resource exists
+        if (!resourceRepository.existsById(resourceId)) {
+            throw new ResourceNotFoundException("Resource not found: " + resourceId);
+        }
+        
+        // Return all bookings for the resource (all statuses to show full availability)
+        return bookingRepository.findByResourceIdOrderByBookingDateAscStartTimeAsc(resourceId)
+                .stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
     // ── GET BOOKING BY ID ────────────────────────────────────────────
     public BookingResponseDTO getBookingById(String id) {
         Booking booking = bookingRepository.findById(id)

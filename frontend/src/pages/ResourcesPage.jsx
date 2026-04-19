@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { resourceService } from '../services/resourceService';
+import { bookingService } from '../services/bookingService';
 import BookingFormModal from './BookingFormPage';
 import LoginPage from './LoginPage';
+import ResourceAvailabilityHeatmap from '../components/resource/ResourceAvailabilityHeatmap';
 
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -121,6 +123,7 @@ function ResourceCard({ resource, isAdmin, onEdit, onDelete, onToggleStatus, onB
   const navigate = useNavigate();
   const cfg = TYPE_CONFIG[resource.type] || TYPE_CONFIG.OTHER;
   const isActive = resource.status === 'ACTIVE';
+  const [showHeatmap, setShowHeatmap] = useState(false);
 
   return (
     <div style={{
@@ -177,6 +180,60 @@ function ResourceCard({ resource, isAdmin, onEdit, onDelete, onToggleStatus, onB
             </p>
           )}
         </div>
+
+        {/* Availability Heatmap Section */}
+        {!isAdmin && (
+          <div style={{
+            padding: '12px',
+            background: '#F8FAFC',
+            borderRadius: '10px',
+            border: '1px solid #E2E8F0',
+            display: showHeatmap ? 'block' : 'block',
+            minHeight: 'auto'
+          }}>
+            <button
+              onClick={() => setShowHeatmap(!showHeatmap)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#2563EB',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontFamily: 'inherit',
+                textAlign: 'left',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = '#1D4ED8'}
+              onMouseLeave={e => e.currentTarget.style.color = '#2563EB'}
+            >
+              <CalendarIcon />
+              {showHeatmap ? 'Hide' : 'View'} 7-Day Availability
+              <span style={{ marginLeft: 'auto', fontSize: '11px', transform: showHeatmap ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+            </button>
+            {showHeatmap && (
+              <div style={{ 
+                marginTop: '12px', 
+                paddingTop: '12px', 
+                borderTop: '1px solid #E2E8F0',
+                maxHeight: '600px',
+                overflowY: 'auto',
+                overflowX: 'hidden'
+              }}>
+                <ResourceAvailabilityHeatmap
+                  resourceId={resource.id}
+                  getResourceBookings={(resourceId) => bookingService.getResourceBookings(resourceId)}
+                  daysToShow={7}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Actions */}
         <div style={{ marginTop: 'auto', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -538,7 +595,7 @@ function ResourcesPage() {
         )}
 
         {!loading && !error && filtered.length > 0 && !isAdmin && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '18px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px', alignItems: 'start' }}>
             {filtered.map(resource => (
               <ResourceCard key={resource.id} resource={resource} isAdmin={isAdmin}
                 onEdit={r => { setEditingResource(r); setShowForm(true); }}
