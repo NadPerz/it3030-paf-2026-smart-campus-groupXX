@@ -10,6 +10,7 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   if (location.pathname.startsWith("/admin")) return null;
+  if (location.pathname.startsWith("/technician")) return null;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -53,7 +54,7 @@ function Navbar() {
 
   const NAV_LINKS = [
     { label: "Resources", to: "/resources" },
-    { label: "Tickets", to: "/tickets" },
+    { label: "Tickets", to: "/incident-tickets" },
   ];
 
   return (

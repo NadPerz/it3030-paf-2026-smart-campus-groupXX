@@ -18,6 +18,7 @@ const CATEGORIES = [
   { value:'IT',         label:'IT / Network',        icon:'💻' },
   { value:'HVAC',       label:'HVAC / Air Con',      icon:'❄️' },
   { value:'GENERAL',    label:'General Maintenance', icon:'📦' },
+  { value:'OTHER', label:'Other', icon:'📝' },
 ];
 
 const PRIORITIES = [
@@ -86,7 +87,6 @@ export default function CreateTicketPage() {
   const validateStep2 = () => {
     if (!form.title.trim())          { setError('Issue title is required.'); return false; }
     if (!form.category)              { setError('Please select a category.'); return false; }
-    if (!form.location.trim())       { setError('Location is required.'); return false; }
     if (form.description.length < 10){ setError('Description must be at least 10 characters.'); return false; }
     setError(''); return true;
   };
@@ -105,31 +105,35 @@ export default function CreateTicketPage() {
   const submit = async () => {
     setLoading(true); setError('');
     try {
-      const res = await ticketService.createTicket({
-        title:          form.title,
-        category:       form.category,
-        priority:       form.priority,
-        location:       form.location,
-        description:    form.description,
-        contactDetails: form.contactDetails,
-        faculty:        form.faculty,
-        resourceId:     form.resourceId,
-        userName:       name,
-        userEmail:      form.userEmail  || email,
-        userRegNo:      form.userRegNo  || regNo,
-      });
+      const formData = new FormData();
+      formData.append('title',          form.title);
+      formData.append('category',       form.category);
+      formData.append('priority',       form.priority);
+      formData.append('location',       form.location || '');
+      formData.append('description',    form.description);
+      formData.append('contactDetails', form.contactDetails);
+      formData.append('faculty',        form.faculty);
+      formData.append('resourceId',     form.resourceId || '');
+      formData.append('userName',       name);
+      formData.append('userEmail',      form.userEmail  || email);
+      formData.append('userRegNo',      form.userRegNo  || regNo);
+
+      // Append images if any
+      images.forEach(img => formData.append('files', img));
+
+      const res = await ticketService.createTicket(formData);
       navigate(`/tickets/${res.data.id}`);
     } catch {
       setError('Failed to submit. Please try again.');
       setLoading(false);
     }
   };
-
   const inp = {
     width:'100%', padding:'10px 14px', border:'1px solid #e5e7eb',
     borderRadius:'8px', fontSize:'0.875rem', outline:'none',
     boxSizing:'border-box', background:'white', fontFamily:'inherit',
-    transition:'border-color 0.2s, box-shadow 0.2s'
+    transition:'border-color 0.2s, box-shadow 0.2s',
+    fontFamily:'Poppins, sans-serif',
   };
   const ro  = { ...inp, background:'#f8fafc', color:'#6b7280', cursor:'not-allowed' };
   const lbl = { display:'block', fontWeight:'600', fontSize:'0.82rem', marginBottom:'5px', color:'#374151' };
@@ -148,24 +152,7 @@ export default function CreateTicketPage() {
 
   return (
     <div style={{ maxWidth:'700px', margin:'0 auto', padding:'24px 28px',
-      fontFamily:'Inter, system-ui, sans-serif' }}>
-
-      {/* HEADER */}
-      <div style={{ marginBottom:'24px' }}>
-        <button onClick={() => navigate('/tickets')} style={{
-          background:'white', border:'1px solid #e5e7eb', borderRadius:'8px',
-          padding:'7px 14px', fontSize:'0.82rem', fontWeight:'600',
-          color:'#374151', cursor:'pointer', marginBottom:'16px',
-          boxShadow:'0 1px 3px rgba(0,0,0,0.06)'
-        }}>← Back</button>
-        <h2 style={{ margin:0, fontSize:'1.5rem', fontWeight:'800',
-          color:'#0f172a', letterSpacing:'-0.02em' }}>
-          Submit a New Ticket
-        </h2>
-        <p style={{ margin:'5px 0 0', color:'#94a3b8', fontSize:'0.875rem' }}>
-          Complete this form and a technician will be assigned as soon as possible
-        </p>
-      </div>
+      fontFamily:'Poppins, sans-serif' }}>
 
       {/* STEP INDICATOR */}
       <div style={{ display:'flex', alignItems:'center', marginBottom:'28px' }}>
@@ -346,7 +333,7 @@ export default function CreateTicketPage() {
             <div style={{ marginBottom:'20px' }}>
               <label style={lbl}>Category *</label>
               <p style={hint}>Select the most appropriate category</p>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:'8px' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:'8px' }}>
                 {CATEGORIES.map(c => (
                   <button key={c.value} type="button"
                     onClick={() => up('category', c.value)}
@@ -395,7 +382,9 @@ export default function CreateTicketPage() {
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'20px' }}>
               <div>
-                <label style={lbl}>Location *</label>
+                <label style={lbl}>Location
+                  <span style={{fontWeight:'400', color:'#94a3b8'}}> (optional)</span>
+                </label>
                 <p style={hint}>Building, floor, room number</p>
                 <input style={inp} value={form.location}
                   onChange={e => up('location', e.target.value)}
