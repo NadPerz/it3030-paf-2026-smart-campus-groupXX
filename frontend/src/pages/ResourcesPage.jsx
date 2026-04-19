@@ -386,19 +386,27 @@ function ResourcesPage() {
           )}
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '24px' }}>
-          {[
-            { label: 'Total Resources', value: resources.length, color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
-            { label: 'Active',          value: activeCount,       color: '#059669', bg: '#ECFDF5', border: '#6EE7B7' },
-            { label: 'Out of Service',  value: outOfServiceCount, color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
-          ].map(s => (
-            <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: '12px', padding: '16px 20px' }}>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: s.color, lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: '12px', color: s.color, fontWeight: '600', marginTop: '4px', opacity: 0.75 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
+        {/* Stats - Admin only */}
+        {isAdmin && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 22 }}>
+            {[
+              { label: 'Total Resources',  value: resources.length,                                                    numColor: '#1d4ed8', bg: '#eff6ff',  borderLeft: '#1d4ed8' },
+              { label: 'Active',           value: activeCount,                                                          numColor: '#16a34a', bg: '#f0fdf4',  borderLeft: '#16a34a' },
+              { label: 'Out of Service',   value: outOfServiceCount,                                                    numColor: '#dc2626', bg: '#fef2f2',  borderLeft: '#dc2626' },
+              { label: 'Lecture Halls',    value: resources.filter(r => r.type === 'LECTURE_HALL').length,            numColor: '#7c3aed', bg: '#f5f3ff',  borderLeft: '#7c3aed' },
+            ].map(s => (
+              <div key={s.label} style={{
+                background: s.bg,
+                borderRadius: 10,
+                padding: '16px 20px',
+                borderLeft: `4px solid ${s.borderLeft}`,
+              }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: s.numColor, lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Search */}
         <div style={{ position: 'relative', marginBottom: '16px' }}>
@@ -457,7 +465,79 @@ function ResourcesPage() {
           </div>
         )}
 
-        {!loading && !error && filtered.length > 0 && (
+        {!loading && !error && filtered.length > 0 && isAdmin && (
+          <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E5E7EB' }}>
+                  {['Name', 'Type', 'Location', 'Capacity', 'Status', 'Actions'].map(col => (
+                    <th key={col} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.8px' }}>
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(resource => {
+                  const cfg = TYPE_CONFIG[resource.type] || TYPE_CONFIG.OTHER;
+                  const isActive = resource.status === 'ACTIVE';
+                  return (
+                    <tr key={resource.id} style={{ borderBottom: '1px solid #F3F4F6', height: '56px' }}>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: cfg.bg, border: `1px solid ${cfg.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cfg.color, flexShrink: 0 }}>
+                            <cfg.IconComponent size={18} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>{resource.name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`, padding: '2px 8px', borderRadius: '999px', display: 'inline-block' }}>
+                          {cfg.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#6B7280' }}>{resource.location || '—'}</td>
+                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#6B7280' }}>{resource.capacity ? `${resource.capacity} seats` : '—'}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: '700', background: isActive ? '#ECFDF5' : '#FEF2F2', color: isActive ? '#059669' : '#DC2626' }}>
+                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: isActive ? '#059669' : '#DC2626', display: 'inline-block' }} />
+                          {isActive ? 'ACTIVE' : 'OUT OF SERVICE'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => { setEditingResource(resource); setShowForm(true); }}
+                            style={{ padding: '6px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', cursor: 'pointer', transition: 'all 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#DBEAFE'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#EFF6FF'}
+                          >
+                            Edit
+                          </button>
+                          <button onClick={() => handleToggleStatus(resource)}
+                            style={{ padding: '6px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: isActive ? '#FFFBEB' : '#F0FDF4', color: isActive ? '#D97706' : '#059669', border: `1px solid ${isActive ? '#FDE68A' : '#86EFAC'}`, cursor: 'pointer', transition: 'all 0.15s' }}
+                          >
+                            {isActive ? '⏸ Deactivate' : '▶ Activate'}
+                          </button>
+                          <button onClick={() => handleDelete(resource.id)}
+                            style={{ padding: '6px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', cursor: 'pointer', transition: 'all 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#FEE2E2'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#FEF2F2'}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length > 0 && !isAdmin && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '18px' }}>
             {filtered.map(resource => (
               <ResourceCard key={resource.id} resource={resource} isAdmin={isAdmin}
