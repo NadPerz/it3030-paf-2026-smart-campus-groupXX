@@ -8,7 +8,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Navbar from "./components/common/Navbar";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import AdminLayout from "./components/common/AdminLayout";
-
+import AdminDashboardPage from "./pages/AdminDashboardPage.jsx";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
@@ -49,6 +49,8 @@ function App() {
 
             {/* ── User routes ── */}
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/overview" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/edit"     element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
 
             {/* Member 1 */}
@@ -73,6 +75,7 @@ function App() {
               <Route path="bookings" element={<AdminBookingsPage />} />
               <Route path="tickets" element={<ProtectedRoute adminOnly><AdminTicketsPage /></ProtectedRoute>} />
               <Route path="tickets/:id" element={<ProtectedRoute adminOnly><TicketDetailPage /></ProtectedRoute>} />
+              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
             </Route>
           </Routes>
         </div>

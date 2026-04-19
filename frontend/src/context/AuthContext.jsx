@@ -133,6 +133,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    window.location.href = '/login'; 
   }
 
   function isAdmin() {
