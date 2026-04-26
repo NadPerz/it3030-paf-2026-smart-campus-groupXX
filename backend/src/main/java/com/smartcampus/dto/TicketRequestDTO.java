@@ -1,34 +1,23 @@
 package com.smartcampus.dto;
 
 import com.smartcampus.enums.TicketPriority;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-/**
- * DTO for submitting a new incident ticket.
- * Member 3 — Incident tickets.
- */
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class TicketRequestDTO {
 
-    /** Optional — links the ticket to a specific campus resource. */
-    private String resourceId;
-
-    @NotBlank(message = "Category is required")
-    private String category;
-
-    @NotBlank(message = "Description is required")
+    private String title;
     private String description;
-
-    @NotNull(message = "Priority is required")
+    private String category;
     private TicketPriority priority;
-
     private String location;
-
+    private String faculty;
+    private String resourceId;
     private String contactDetails;
+    private String userName;
+    private String userEmail;
+    private String userRegNo;
 }
