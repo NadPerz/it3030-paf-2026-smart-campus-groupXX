@@ -8,7 +8,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Navbar from "./components/common/Navbar";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import AdminLayout from "./components/common/AdminLayout";
-
+import AdminDashboardPage from "./pages/AdminDashboardPage.jsx";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
@@ -21,16 +21,16 @@ import AdminNotificationsPage from "./pages/AdminNotificationsPage";
 import UserManagementPage from "./pages/UserManagementPage";
 import AuditLogPage from "./pages/AuditLogPage";
 import ResourcesPage from './pages/ResourcesPage';
+import BookingFormPage from "./pages/BookingFormPage";
 import MyBookingsPage from "./pages/MyBookingsPage";
 import AdminBookingsPage from "./pages/AdminBookingsPage";
 import QRCheckInPage from "./pages/QRCheckInPage";
-
-// Member 3 — Ticket pages
 import MyTicketsPage from "./pages/MyTicketsPage";
 import CreateTicketPage from "./pages/CreateTicketPage";
 import TicketDetailPage from "./pages/TicketDetailPage";
 import AdminTicketsPage from "./pages/AdminTicketsPage";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
+import TicketsPublicPage from './pages/TicketsPublicPage';
 
 function App() {
   return (
@@ -49,111 +49,35 @@ function App() {
             <Route path="/check-in" element={<QRCheckInPage />} />
 
             {/* ── User routes ── */}
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <ProtectedRoute>
-                  <NotificationsPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/overview" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/edit"     element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
 
             {/* Member 1 */}
-            {/* <Route path="/resources" element={<ResourcesPage />} /> */}
+            <Route path="/resources" element={<ResourcesPage />} />
 
             {/* Member 2 */}
-            <Route
-              path="/bookings"
-              element={
-                <ProtectedRoute>
-                  <MyBookingsPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/bookings/new" element={<ProtectedRoute><BookingFormPage /></ProtectedRoute>} />
+            <Route path="/bookings" element={<ProtectedRoute><MyBookingsPage /></ProtectedRoute>} />
 
-            {/* ── MEMBER 3 — TICKET ROUTES ── */}
-            <Route
-              path="/tickets"
-              element={
-                <ProtectedRoute>
-                  <MyTicketsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tickets/new"
-              element={
-                <ProtectedRoute>
-                  <CreateTicketPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tickets/:id"
-              element={
-                <ProtectedRoute>
-                  <TicketDetailPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/technician"
-              element={
-                <ProtectedRoute>
-                  <TechnicianDashboard />
-                </ProtectedRoute>
-              }
-            />
+            {/* Member 3 */}
+            <Route path="/tickets/new" element={<ProtectedRoute><CreateTicketPage /></ProtectedRoute>} />
+            <Route path="/tickets/:id" element={<ProtectedRoute><TicketDetailPage /></ProtectedRoute>} />
+            <Route path="/tickets" element={<ProtectedRoute><MyTicketsPage /></ProtectedRoute>} />
+            <Route path="/technician" element={<ProtectedRoute technicianOnly><TechnicianDashboard /></ProtectedRoute>} />
+            <Route path="/incident-tickets" element={<TicketsPublicPage />} />
 
-            {/* ── Admin routes — persistent sidebar layout ── */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute adminOnly>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              {/* Member 4 — Audit Log */}
-              <Route
-                path="audit-log"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <AuditLogPage />
-                  </ProtectedRoute>
-                }
-              />
-
+            {/* ── Admin routes ── */}
+            <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
+              <Route path="audit-log" element={<ProtectedRoute adminOnly><AuditLogPage /></ProtectedRoute>} />
               <Route path="users" element={<UserManagementPage />} />
               <Route path="notifications" element={<AdminNotificationsPage />} />
               <Route path="resources" element={<ResourcesPage />} />
               <Route path="bookings" element={<AdminBookingsPage />} />
-
-              {/* Member 3 — Tickets */}
-              <Route
-                path="tickets"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <AdminTicketsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/tickets/:id"
-                element={
-                  <ProtectedRoute adminOnly>
-                    <TicketDetailPage />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="tickets" element={<ProtectedRoute adminOnly><AdminTicketsPage /></ProtectedRoute>} />
+              <Route path="tickets/:id" element={<ProtectedRoute adminOnly><TicketDetailPage /></ProtectedRoute>} />
+              <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
             </Route>
           </Routes>
         </div>

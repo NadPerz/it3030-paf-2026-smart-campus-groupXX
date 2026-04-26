@@ -125,20 +125,25 @@ export default function AdminBookingsPage() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14, marginBottom:22 }}>
-        {[
-          { label:'Total Bookings',  value:counts.total,    color:'#1d4ed8', bg:'#eff6ff',  border:'#bfdbfe' },
-          { label:'Pending Review',  value:counts.pending,  color:'#b45309', bg:'#fefce8',  border:'#fde68a' },
-          { label:'Approved',        value:counts.approved, color:'#15803d', bg:'#f0fdf4',  border:'#bbf7d0' },
-          { label:'Rejected',        value:counts.rejected, color:'#991b1b', bg:'#fef2f2',  border:'#fecaca' },
-        ].map(s => (
-          <div key={s.label} style={{ background:s.bg, border:`1px solid ${s.border}`, borderRadius:12, padding:'16px 20px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:s.color, textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6, opacity:0.75 }}>{s.label}</div>
-            <div style={{ fontSize:30, fontWeight:900, color:s.color, lineHeight:1 }}>{s.value}</div>
-          </div>
-        ))}
-      </div>
-
+      {/* Stat cards */}
+<div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:22 }}>
+  {[
+    { label:'Total Bookings',  value:counts.total,    numColor:'#1d4ed8', bg:'#eff6ff',  borderLeft:'#1d4ed8' },
+    { label:'Pending Review',  value:counts.pending,  numColor:'#d97706', bg:'#fffbeb',  borderLeft:'#d97706' },
+    { label:'Approved',        value:counts.approved, numColor:'#16a34a', bg:'#f0fdf4',  borderLeft:'#16a34a' },
+    { label:'Rejected',        value:counts.rejected, numColor:'#dc2626', bg:'#fef2f2',  borderLeft:'#dc2626' },
+  ].map(s => (
+    <div key={s.label} style={{
+      background: s.bg,
+      borderRadius: 10,
+      padding: '16px 20px',
+      borderLeft: `4px solid ${s.borderLeft}`,
+    }}>
+      <div style={{ fontSize:28, fontWeight:700, color:s.numColor, lineHeight:1 }}>{s.value}</div>
+      <div style={{ fontSize:13, color:'#6b7280', marginTop:4 }}>{s.label}</div>
+    </div>
+  ))}
+</div>
       {/* Pending alert */}
       {counts.pending > 0 && (
         <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', background:'#fefce8', border:'1px solid #fde68a', borderRadius:10, marginBottom:18 }}>

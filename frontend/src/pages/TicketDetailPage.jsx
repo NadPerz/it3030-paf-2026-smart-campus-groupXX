@@ -303,7 +303,7 @@ export default function TicketDetailPage() {
                     boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
                   }}
                 >
-                  {editing ? "✕ Cancel" : "✏️ Edit"}
+                  {editing ? "✕ Cancel" : "Edit"}
                 </button>
                 <button
                   onClick={handleDelete}

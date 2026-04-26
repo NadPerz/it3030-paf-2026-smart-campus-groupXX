@@ -117,15 +117,18 @@ export function AuthProvider({ children }) {
     return () => clearInterval(interval);
   }, [user]);
 
-  function login(userData) {
+ function login(userData) {
   setUser(userData);
   localStorage.setItem('user', JSON.stringify(userData));
   if (userData.token) {
     localStorage.setItem('token', userData.token);
   }
-  // Redirect admin straight to the admin panel
+
+  // Redirect based on role
   if (userData.role === 'ADMIN') {
     window.location.href = '/admin/users';
+  } else if (userData.role === 'TECHNICIAN') {
+    window.location.href = '/technician';
   }
 }
 
@@ -133,6 +136,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    window.location.href = '/login'; 
   }
 
   function isAdmin() {

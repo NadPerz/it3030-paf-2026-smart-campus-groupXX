@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { resourceService } from '../services/resourceService';
+import { bookingService } from '../services/bookingService';
+import BookingFormModal from './BookingFormPage';
+import LoginPage from './LoginPage';
+import ResourceAvailabilityHeatmap from '../components/resource/ResourceAvailabilityHeatmap';
 
 const SearchIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -51,13 +55,60 @@ const XIcon = () => (
   </svg>
 );
 
+// Professional SVG icons for resource types
+const LectureHallIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h16v14H4z"/><path d="M12 18v2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="6" y1="12" x2="18" y2="12"/>
+    <line x1="8" y1="16" x2="16" y2="16"/><circle cx="12" cy="5" r="1.5"/>
+  </svg>
+);
+
+const LabIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 3v6h6V3"/><path d="M9 9v9h6V9"/><path d="M7 12h10M7 15h10M7 18h10"/><line x1="12" y1="3" x2="12" y2="0"/>
+  </svg>
+);
+
+const MeetingRoomIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><ellipse cx="12" cy="12" rx="5" ry="3"/><line x1="7" y1="12" x2="7" y2="18"/>
+    <line x1="17" y1="12" x2="17" y2="18"/><line x1="9" y1="18" x2="15" y2="18"/>
+  </svg>
+);
+
+const ProjectorIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="12" y1="17" x2="12" y2="21"/><line x1="8" y1="21" x2="16" y2="21"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+
+const CameraIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+  </svg>
+);
+
+const ResourceIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+    <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+  </svg>
+);
+
+const BuildingIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22V12h6v10"/><path d="M3 9h18"/>
+  </svg>
+);
+
 const TYPE_CONFIG = {
-  LECTURE_HALL: { label: 'Lecture Hall', icon: '🎓', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
-  LAB:          { label: 'Lab',          icon: '🔬', color: '#059669', bg: '#ECFDF5', border: '#6EE7B7' },
-  MEETING_ROOM: { label: 'Meeting Room', icon: '🤝', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
-  PROJECTOR:    { label: 'Projector',    icon: '📽️', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
-  CAMERA:       { label: 'Camera',       icon: '📷', color: '#0891B2', bg: '#ECFEFF', border: '#A5F3FC' },
-  OTHER:        { label: 'Other',        icon: '📦', color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
+  LECTURE_HALL: { label: 'Lecture Hall', IconComponent: LectureHallIcon, color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
+  LAB:          { label: 'Lab',          IconComponent: LabIcon,          color: '#059669', bg: '#ECFDF5', border: '#6EE7B7' },
+  MEETING_ROOM: { label: 'Meeting Room', IconComponent: MeetingRoomIcon,  color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
+  PROJECTOR:    { label: 'Projector',    IconComponent: ProjectorIcon,    color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  CAMERA:       { label: 'Camera',       IconComponent: CameraIcon,       color: '#0891B2', bg: '#ECFEFF', border: '#A5F3FC' },
+  OTHER:        { label: 'Other',        IconComponent: ResourceIcon,     color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
 };
 
 const FILTER_TABS = [
@@ -68,10 +119,11 @@ const FILTER_TABS = [
   { key: 'OTHER',        label: 'Other' },
 ];
 
-function ResourceCard({ resource, isAdmin, onEdit, onDelete, onToggleStatus }) {
+function ResourceCard({ resource, isAdmin, onEdit, onDelete, onToggleStatus, onBookNow }) {
   const navigate = useNavigate();
   const cfg = TYPE_CONFIG[resource.type] || TYPE_CONFIG.OTHER;
   const isActive = resource.status === 'ACTIVE';
+  const [showHeatmap, setShowHeatmap] = useState(false);
 
   return (
     <div style={{
@@ -88,8 +140,8 @@ function ResourceCard({ resource, isAdmin, onEdit, onDelete, onToggleStatus }) {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: cfg.bg, border: `1px solid ${cfg.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>
-              {cfg.icon}
+            <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: cfg.bg, border: `1px solid ${cfg.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cfg.color, flexShrink: 0 }}>
+              <cfg.IconComponent size={20} />
             </div>
             <div>
               <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0F172A', margin: 0 }}>{resource.name}</h3>
@@ -129,13 +181,67 @@ function ResourceCard({ resource, isAdmin, onEdit, onDelete, onToggleStatus }) {
           )}
         </div>
 
+        {/* Availability Heatmap Section */}
+        {!isAdmin && (
+          <div style={{
+            padding: '12px',
+            background: '#F8FAFC',
+            borderRadius: '10px',
+            border: '1px solid #E2E8F0',
+            display: showHeatmap ? 'block' : 'block',
+            minHeight: 'auto'
+          }}>
+            <button
+              onClick={() => setShowHeatmap(!showHeatmap)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#2563EB',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontFamily: 'inherit',
+                textAlign: 'left',
+                transition: 'all 0.15s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = '#1D4ED8'}
+              onMouseLeave={e => e.currentTarget.style.color = '#2563EB'}
+            >
+              <CalendarIcon />
+              {showHeatmap ? 'Hide' : 'View'} 7-Day Availability
+              <span style={{ marginLeft: 'auto', fontSize: '11px', transform: showHeatmap ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+            </button>
+            {showHeatmap && (
+              <div style={{ 
+                marginTop: '12px', 
+                paddingTop: '12px', 
+                borderTop: '1px solid #E2E8F0',
+                maxHeight: '600px',
+                overflowY: 'auto',
+                overflowX: 'hidden'
+              }}>
+                <ResourceAvailabilityHeatmap
+                  resourceId={resource.id}
+                  getResourceBookings={(resourceId) => bookingService.getResourceBookings(resourceId)}
+                  daysToShow={7}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ marginTop: 'auto', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
 
           {/* Book Now — ONLY for non-admin users */}
           {isActive && !isAdmin && (
             <button
-              onClick={() => navigate('/bookings')}
+              onClick={() => onBookNow(resource)}
               style={{ flex: 1, padding: '9px 14px', borderRadius: '9px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: '#0F172A', color: 'white', border: 'none', transition: 'background 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.background = '#1E293B'}
               onMouseLeave={e => e.currentTarget.style.background = '#0F172A'}
@@ -253,6 +359,10 @@ function ResourceForm({ existing, onSuccess, onCancel }) {
 
 function ResourcesPage() {
   const { user } = useAuth();
+  
+  // Redirect to login if user is not authenticated
+  if (!user) return <LoginPage />;
+  
   const isAdmin = user?.role === 'ADMIN';
   const [resources, setResources]             = useState([]);
   const [loading, setLoading]                 = useState(true);
@@ -262,6 +372,8 @@ function ResourcesPage() {
   const [statusFilter, setStatusFilter]       = useState('');
   const [showForm, setShowForm]               = useState(false);
   const [editingResource, setEditingResource] = useState(null);
+  const [bookingModalOpen, setBookingModalOpen] = useState(false);
+  const [selectedBookingResource, setSelectedBookingResource] = useState(null);
 
   async function fetchResources() {
     setLoading(true); setError('');
@@ -313,7 +425,9 @@ function ResourcesPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '28px' }}>🏛️</span>
+              <div style={{ fontSize: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748B' }}>
+                <BuildingIcon size={28} />
+              </div>
               <h1 style={{ fontSize: '26px', fontWeight: '800', color: '#0F172A', margin: 0, letterSpacing: '-0.3px' }}>Campus Resources</h1>
             </div>
             <p style={{ fontSize: '14px', color: '#64748B', margin: 0 }}>Browse and manage campus facilities and assets</p>
@@ -329,19 +443,27 @@ function ResourcesPage() {
           )}
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px', marginBottom: '24px' }}>
-          {[
-            { label: 'Total Resources', value: resources.length, color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
-            { label: 'Active',          value: activeCount,       color: '#059669', bg: '#ECFDF5', border: '#6EE7B7' },
-            { label: 'Out of Service',  value: outOfServiceCount, color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
-          ].map(s => (
-            <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: '12px', padding: '16px 20px' }}>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: s.color, lineHeight: 1 }}>{s.value}</div>
-              <div style={{ fontSize: '12px', color: s.color, fontWeight: '600', marginTop: '4px', opacity: 0.75 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
+        {/* Stats - Admin only */}
+        {isAdmin && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 22 }}>
+            {[
+              { label: 'Total Resources',  value: resources.length,                                                    numColor: '#1d4ed8', bg: '#eff6ff',  borderLeft: '#1d4ed8' },
+              { label: 'Active',           value: activeCount,                                                          numColor: '#16a34a', bg: '#f0fdf4',  borderLeft: '#16a34a' },
+              { label: 'Out of Service',   value: outOfServiceCount,                                                    numColor: '#dc2626', bg: '#fef2f2',  borderLeft: '#dc2626' },
+              { label: 'Lecture Halls',    value: resources.filter(r => r.type === 'LECTURE_HALL').length,            numColor: '#7c3aed', bg: '#f5f3ff',  borderLeft: '#7c3aed' },
+            ].map(s => (
+              <div key={s.label} style={{
+                background: s.bg,
+                borderRadius: 10,
+                padding: '16px 20px',
+                borderLeft: `4px solid ${s.borderLeft}`,
+              }}>
+                <div style={{ fontSize: 28, fontWeight: 700, color: s.numColor, lineHeight: 1 }}>{s.value}</div>
+                <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Search */}
         <div style={{ position: 'relative', marginBottom: '16px' }}>
@@ -389,7 +511,9 @@ function ResourcesPage() {
 
         {!loading && !error && filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '80px 20px', background: 'white', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏛️</div>
+            <div style={{ fontSize: '48px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#CBD5E1' }}>
+              <BuildingIcon size={48} />
+            </div>
             <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#334155', marginBottom: '8px' }}>{search ? `No results for "${search}"` : 'No resources found'}</h3>
             <p style={{ fontSize: '13px', color: '#94A3B8' }}>{isAdmin ? 'Click "Add Resource" to create your first resource.' : 'Check back later.'}</p>
             {(search || typeFilter || statusFilter) && (
@@ -398,18 +522,98 @@ function ResourcesPage() {
           </div>
         )}
 
-        {!loading && !error && filtered.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '18px' }}>
+        {!loading && !error && filtered.length > 0 && isAdmin && (
+          <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E5E7EB' }}>
+                  {['Name', 'Type', 'Location', 'Capacity', 'Status', 'Actions'].map(col => (
+                    <th key={col} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.8px' }}>
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(resource => {
+                  const cfg = TYPE_CONFIG[resource.type] || TYPE_CONFIG.OTHER;
+                  const isActive = resource.status === 'ACTIVE';
+                  return (
+                    <tr key={resource.id} style={{ borderBottom: '1px solid #F3F4F6', height: '56px' }}>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: cfg.bg, border: `1px solid ${cfg.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: cfg.color, flexShrink: 0 }}>
+                            <cfg.IconComponent size={18} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#111827' }}>{resource.name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`, padding: '2px 8px', borderRadius: '999px', display: 'inline-block' }}>
+                          {cfg.label}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#6B7280' }}>{resource.location || '—'}</td>
+                      <td style={{ padding: '12px 16px', fontSize: '14px', color: '#6B7280' }}>{resource.capacity ? `${resource.capacity} seats` : '—'}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: '700', background: isActive ? '#ECFDF5' : '#FEF2F2', color: isActive ? '#059669' : '#DC2626' }}>
+                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: isActive ? '#059669' : '#DC2626', display: 'inline-block' }} />
+                          {isActive ? 'ACTIVE' : 'OUT OF SERVICE'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={() => { setEditingResource(resource); setShowForm(true); }}
+                            style={{ padding: '6px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE', cursor: 'pointer', transition: 'all 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#DBEAFE'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#EFF6FF'}
+                          >
+                            Edit
+                          </button>
+                          <button onClick={() => handleToggleStatus(resource)}
+                            style={{ padding: '6px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: isActive ? '#FFFBEB' : '#F0FDF4', color: isActive ? '#D97706' : '#059669', border: `1px solid ${isActive ? '#FDE68A' : '#86EFAC'}`, cursor: 'pointer', transition: 'all 0.15s' }}
+                          >
+                            {isActive ? '⏸ Deactivate' : '▶ Activate'}
+                          </button>
+                          <button onClick={() => handleDelete(resource.id)}
+                            style={{ padding: '6px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', cursor: 'pointer', transition: 'all 0.15s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#FEE2E2'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#FEF2F2'}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!loading && !error && filtered.length > 0 && !isAdmin && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '18px', alignItems: 'start' }}>
             {filtered.map(resource => (
               <ResourceCard key={resource.id} resource={resource} isAdmin={isAdmin}
                 onEdit={r => { setEditingResource(r); setShowForm(true); }}
-                onDelete={handleDelete} onToggleStatus={handleToggleStatus} />
+                onDelete={handleDelete} onToggleStatus={handleToggleStatus}
+                onBookNow={(r) => { setSelectedBookingResource(r); setBookingModalOpen(true); }} />
             ))}
           </div>
         )}
       </div>
 
-      {/* Modal */}
+      {/* Booking Modal */}
+      <BookingFormModal 
+        isOpen={bookingModalOpen}
+        resourceId={selectedBookingResource?.id}
+        resourceName={selectedBookingResource?.name}
+        onClose={() => setBookingModalOpen(false)}
+        onSuccess={() => { fetchResources(); setBookingModalOpen(false); }}
+      />
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '20px', backdropFilter: 'blur(4px)' }}>
           <div style={{ background: 'white', borderRadius: '20px', padding: '32px', width: '100%', maxWidth: '560px', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(0,0,0,0.18)' }}>
