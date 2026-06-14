@@ -815,6 +815,76 @@ public class NotificationService {
                 });
         }
 
+        // ── notifyTicketEdited ───────────────────────────────────────────────────────
+        public void notifyTicketEdited(String userId, Ticket ticket) {
+                createNotification(
+                                userId,
+                                "Ticket Updated",
+                                "Ticket \"" + ticket.getTitle() + "\" has been edited.",
+                                "TICKET_UPDATED",
+                                ticket.getId());
+        }
+
+        // ── notifyTicketDeleted ──────────────────────────────────────────────────────
+        public void notifyTicketDeleted(String userId, String ticketTitle) {
+                createNotification(
+                                userId,
+                                "Ticket Deleted",
+                                "Ticket \"" + ticketTitle + "\" has been deleted.",
+                                "TICKET_DELETED",
+                                null);
+        }
+
+        // ── notifyCommentAddedSelf ───────────────────────────────────────────────────
+        public void notifyCommentAddedSelf(String userId, Ticket ticket) {
+                createNotification(
+                                userId,
+                                "Comment Added",
+                                "Your comment on ticket \"" + ticket.getTitle() + "\" was posted.",
+                                "TICKET_COMMENT",
+                                ticket.getId());
+        }
+
+        // ── notifyCommentDeleted ─────────────────────────────────────────────────────
+        public void notifyCommentDeleted(String userId, Ticket ticket, String deleterName) {
+                createNotification(
+                                userId,
+                                "Comment Deleted",
+                                deleterName + " deleted a comment on ticket \"" + ticket.getTitle() + "\".",
+                                "TICKET_COMMENT",
+                                ticket.getId());
+        }
+
+        // ── notifyCommentDeletedSelf ─────────────────────────────────────────────────
+        public void notifyCommentDeletedSelf(String userId, Ticket ticket) {
+                createNotification(
+                                userId,
+                                "Comment Deleted",
+                                "Your comment on ticket \"" + ticket.getTitle() + "\" was deleted.",
+                                "TICKET_COMMENT",
+                                ticket.getId());
+        }
+
+        // ── notifyCommentEdited ──────────────────────────────────────────────────────
+        public void notifyCommentEdited(String userId, Ticket ticket, String editorName) {
+                createNotification(
+                                userId,
+                                "Comment Edited",
+                                editorName + " edited a comment on ticket \"" + ticket.getTitle() + "\".",
+                                "TICKET_COMMENT",
+                                ticket.getId());
+        }
+
+        // ── notifyCommentEditedSelf ──────────────────────────────────────────────────
+        public void notifyCommentEditedSelf(String userId, Ticket ticket) {
+                createNotification(
+                                userId,
+                                "Comment Edited",
+                                "Your comment on ticket \"" + ticket.getTitle() + "\" was updated.",
+                                "TICKET_COMMENT",
+                                ticket.getId());
+        }
+
         // ─────────────────────────────────────────────
         // RESOURCE NOTIFICATION TRIGGERS
         // ─────────────────────────────────────────────

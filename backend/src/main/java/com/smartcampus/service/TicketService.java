@@ -84,14 +84,11 @@ public class TicketService {
         Ticket saved = ticketRepository.save(ticket);
         aiTriageService.runTriageAsync(saved.getId());
 
-        // Notify user ticket created
-        /*
-         * try {
-         * notificationService.notifyTicketCreated(userId, saved);
-         * } catch (Exception e) {
-         * // Non-critical
-         * }
-         */
+        try {
+            notificationService.notifyTicketCreated(userId, saved);
+        } catch (Exception e) {
+            // Non-critical
+        }
 
         return toResponse(saved);
     }
@@ -146,7 +143,25 @@ public class TicketService {
         if (dto.getResourceId() != null)
             ticket.setResourceId(dto.getResourceId());
 
-        return toResponse(ticketRepository.save(ticket));
+        Ticket saved = ticketRepository.save(ticket);
+
+        // Notify ticket owner that their ticket was edited
+        try {
+            notificationService.notifyTicketEdited(saved.getUserId(), saved);
+        } catch (Exception e) {
+            // Non-critical
+        }
+
+        // Notify assigned technician if there is one
+        try {
+            if (saved.getAssignedToId() != null) {
+                notificationService.notifyTicketEdited(saved.getAssignedToId(), saved);
+            }
+        } catch (Exception e) {
+            // Non-critical
+        }
+
+        return toResponse(saved);
     }
 
     // ── UPDATE STATUS ────────────────────────────────────────────────────────
@@ -168,14 +183,11 @@ public class TicketService {
 
         Ticket saved = ticketRepository.save(ticket);
 
-        // Notify user of status change
-        /*
-         * try {
-         * notificationService.notifyTicketStatusChanged(ticket.getUserId(), saved);
-         * } catch (Exception e) {
-         * // Non-critical
-         * }
-         */
+        try {
+            notificationService.notifyTicketStatusChanged(ticket.getUserId(), saved);
+        } catch (Exception e) {
+            // Non-critical
+        }
 
         return toResponse(saved);
     }
@@ -189,14 +201,11 @@ public class TicketService {
 
         Ticket saved = ticketRepository.save(ticket);
 
-        // Notify user ticket rejected
-        /*
-         * try {
-         * notificationService.notifyTicketRejected(ticket.getUserId(), saved);
-         * } catch (Exception e) {
-         * // Non-critical
-         * }
-         */
+        try {
+            notificationService.notifyTicketRejected(ticket.getUserId(), saved);
+        } catch (Exception e) {
+            // Non-critical
+        }
 
         return toResponse(saved);
     }
@@ -207,26 +216,22 @@ public class TicketService {
                 .orElseThrow(() -> new RuntimeException("Ticket not found: " + ticketId));
         ticket.setAssignedToId(technicianId);
         ticket.setAssignedToName(technicianName);
-        ticket.setAssignedAt(LocalDateTime.now()); // ← SLA: first response time
+        ticket.setAssignedAt(LocalDateTime.now());
         ticket.setStatus(TicketStatus.IN_PROGRESS);
 
         Ticket saved = ticketRepository.save(ticket);
 
-        // Notify user ticket assigned
-        /*
-         * try {
-         * notificationService.notifyTicketAssigned(ticket.getUserId(), saved);
-         * } catch (Exception e) {
-         * // Non-critical
-         * }
-         * 
-         * // Notify technician of new assignment
-         * try {
-         * notificationService.notifyTechnicianAssigned(technicianId, saved);
-         * } catch (Exception e) {
-         * // Non-critical
-         * }
-         */
+        try {
+            notificationService.notifyTicketAssigned(ticket.getUserId(), saved);
+        } catch (Exception e) {
+            // Non-critical
+        }
+
+        try {
+            notificationService.notifyTechnicianAssigned(technicianId, saved);
+        } catch (Exception e) {
+            // Non-critical
+        }
 
         return toResponse(saved);
     }
@@ -246,16 +251,30 @@ public class TicketService {
 
         TicketComment saved = commentRepository.save(comment);
 
-        // Notify ticket owner of new comment (if commenter is not the owner)
-        /*
-         * try {
-         * if (!userId.equals(ticket.getUserId())) {
-         * notificationService.notifyNewComment(ticket.getUserId(), ticket, userName);
-         * }
-         * } catch (Exception e) {
-         * // Non-critical
-         * }
-         */
+        // Notify the commenter themselves
+        try {
+            notificationService.notifyCommentAddedSelf(userId, ticket);
+        } catch (Exception e) {
+        }
+
+        // Notify ticket owner if commenter is not the owner
+        try {
+            if (!userId.equals(ticket.getUserId())) {
+                notificationService.notifyNewComment(ticket.getUserId(), ticket, userName);
+            }
+        } catch (Exception e) {
+        }
+
+        // Notify assigned technician if commenter is not the technician
+        // and technician is not the same as ticket owner
+        try {
+            if (ticket.getAssignedToId() != null
+                    && !userId.equals(ticket.getAssignedToId())
+                    && !ticket.getAssignedToId().equals(ticket.getUserId())) {
+                notificationService.notifyNewComment(ticket.getAssignedToId(), ticket, userName);
+            }
+        } catch (Exception e) {
+        }
 
         return toCommentResponse(saved);
     }
@@ -272,6 +291,35 @@ public class TicketService {
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
         if (!isAdmin && !comment.getUserId().equals(userId))
             throw new RuntimeException("Cannot delete another user's comment");
+
+        Ticket ticket = ticketRepository.findById(comment.getTicketId()).orElse(null);
+        if (ticket != null) {
+            // Notify the deleter themselves
+            try {
+                notificationService.notifyCommentDeletedSelf(userId, ticket);
+            } catch (Exception e) {
+            }
+
+            // Notify ticket owner if deleter is not the owner
+            try {
+                if (!userId.equals(ticket.getUserId())) {
+                    notificationService.notifyCommentDeleted(ticket.getUserId(), ticket, comment.getUserName());
+                }
+            } catch (Exception e) {
+            }
+
+            // Notify assigned technician if deleter is not the technician
+            // and technician is not the same as ticket owner
+            try {
+                if (ticket.getAssignedToId() != null
+                        && !userId.equals(ticket.getAssignedToId())
+                        && !ticket.getAssignedToId().equals(ticket.getUserId())) {
+                    notificationService.notifyCommentDeleted(ticket.getAssignedToId(), ticket, comment.getUserName());
+                }
+            } catch (Exception e) {
+            }
+        }
+
         commentRepository.deleteById(commentId);
     }
 
@@ -281,14 +329,63 @@ public class TicketService {
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
         if (!comment.getUserId().equals(userId))
             throw new RuntimeException("Cannot edit another user's comment");
+
         comment.setContent(content);
-        return toCommentResponse(commentRepository.save(comment));
+        TicketComment saved = commentRepository.save(comment);
+
+        Ticket ticket = ticketRepository.findById(comment.getTicketId()).orElse(null);
+        if (ticket != null) {
+            // Notify the editor themselves
+            try {
+                notificationService.notifyCommentEditedSelf(userId, ticket);
+            } catch (Exception e) {
+            }
+
+            // Notify ticket owner if editor is not the owner
+            try {
+                if (!userId.equals(ticket.getUserId())) {
+                    notificationService.notifyCommentEdited(ticket.getUserId(), ticket, comment.getUserName());
+                }
+            } catch (Exception e) {
+            }
+
+            // Notify assigned technician if editor is not the technician
+            // and technician is not the same as ticket owner
+            try {
+                if (ticket.getAssignedToId() != null
+                        && !userId.equals(ticket.getAssignedToId())
+                        && !ticket.getAssignedToId().equals(ticket.getUserId())) {
+                    notificationService.notifyCommentEdited(ticket.getAssignedToId(), ticket, comment.getUserName());
+                }
+            } catch (Exception e) {
+            }
+        }
+
+        return toCommentResponse(saved);
     }
 
     // ── DELETE TICKET ────────────────────────────────────────────────────────
     public void deleteTicket(String id) {
-        ticketRepository.findById(id)
+        Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found: " + id));
+
+        // Notify ticket owner
+        try {
+            notificationService.notifyTicketDeleted(ticket.getUserId(), ticket.getTitle());
+        } catch (Exception e) {
+            // Non-critical
+        }
+
+        // Notify assigned technician if there is one
+        try {
+            if (ticket.getAssignedToId() != null) {
+                notificationService.notifyTicketDeleted(
+                        ticket.getAssignedToId(), ticket.getTitle());
+            }
+        } catch (Exception e) {
+            // Non-critical
+        }
+
         commentRepository.deleteByTicketId(id);
         ticketRepository.deleteById(id);
     }
@@ -320,7 +417,6 @@ public class TicketService {
                 .resolvedAt(t.getResolvedAt())
                 .createdAt(t.getCreatedAt())
                 .updatedAt(t.getUpdatedAt())
-                // ── SLA timers ──
                 .timeToFirstResponse(formatDuration(t.getCreatedAt(), t.getAssignedAt()))
                 .timeToResolution(formatDuration(t.getCreatedAt(), t.getResolvedAt()))
                 .build();

@@ -3,301 +3,454 @@ import { ticketService } from '../services/ticketService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const STATUS_COLORS = { OPEN:'#004085', IN_PROGRESS:'#92400e', RESOLVED:'#14532d', CLOSED:'#374151', REJECTED:'#7f1d1d' };
-const STATUS_BG     = { OPEN:'#dbeafe', IN_PROGRESS:'#fef3c7', RESOLVED:'#dcfce7', CLOSED:'#f3f4f6', REJECTED:'#fee2e2' };
-const STATUS_DOT    = { OPEN:'#3b82f6', IN_PROGRESS:'#f59e0b', RESOLVED:'#22c55e', CLOSED:'#9ca3af', REJECTED:'#ef4444' };
-const PRIORITY_COLOR= { LOW:'#16a34a', MEDIUM:'#d97706', HIGH:'#dc2626', CRITICAL:'#7c3aed' };
-const PRIORITY_BG   = { LOW:'#dcfce7', MEDIUM:'#fef3c7', HIGH:'#fee2e2', CRITICAL:'#ede9fe' };
+const PRIORITY_COLOR = { LOW: '#16a34a', MEDIUM: '#d97706', HIGH: '#dc2626', CRITICAL: '#7c3aed' };
+const PRIORITY_BG    = { LOW: '#dcfce7', MEDIUM: '#fef3c7', HIGH: '#fee2e2', CRITICAL: '#ede9fe' };
 
-const Chip = ({ label, status, type='status' }) => {
-  const c = type==='status'
-    ? { bg:STATUS_BG[status], color:STATUS_COLORS[status], dot:STATUS_DOT[status] }
-    : { bg:PRIORITY_BG[status], color:PRIORITY_COLOR[status], dot:PRIORITY_COLOR[status] };
+const IconDashboard = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+  </svg>
+);
+
+const IconOverview = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+  </svg>
+);
+const IconEdit = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+const IconBooking = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+const IconTicket = () => (
+  <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+    <path d="M2 10a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8z" />
+    <path d="M6 10V6a6 6 0 0 1 12 0v4" />
+  </svg>
+);
+
+const NAV_ITEMS = [
+  { id: 'dashboard', label: 'Dashboard',        Icon: IconDashboard, path: '/profile' },
+  { id: 'overview',  label: 'Profile Overview', Icon: IconOverview,  path: '/profile/overview' },
+  { id: 'edit',      label: 'Edit Profile',     Icon: IconEdit,      path: '/profile/edit' },
+  { id: 'bookings',  label: 'My Bookings',      Icon: IconBooking,   path: '/bookings' },
+  { id: 'tickets',   label: 'My Tickets',       Icon: IconTicket,    path: '/tickets' },
+];
+
+function StatusBadge({ status }) {
+  const cfg = {
+    OPEN:        { bg: '#dbeafe', color: '#1e40af', dot: '#3b82f6' },
+    IN_PROGRESS: { bg: '#fef3c7', color: '#92400e', dot: '#f59e0b' },
+    RESOLVED:    { bg: '#dcfce7', color: '#15803d', dot: '#22c55e' },
+    CLOSED:      { bg: '#f3f4f6', color: '#374151', dot: '#9ca3af' },
+    REJECTED:    { bg: '#fee2e2', color: '#991b1b', dot: '#ef4444' },
+  };
+  const s = cfg[status] || cfg.CLOSED;
+  const label = status === 'IN_PROGRESS' ? 'IN PROGRESS' : status;
   return (
-    <span style={{ display:'inline-flex', alignItems:'center', gap:'5px',
-      background:c.bg, color:c.color, padding:'3px 10px',
-      borderRadius:'20px', fontSize:'0.7rem', fontWeight:'700' }}>
-      <span style={{ width:'6px', height:'6px', borderRadius:'50%',
-        background:c.dot, flexShrink:0 }} />
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '4px 11px', borderRadius: 20, fontSize: 11,
+      fontWeight: 700, background: s.bg, color: s.color, letterSpacing: '0.3px'
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot, flexShrink: 0 }} />
       {label}
     </span>
   );
-};
+}
+
+const TagIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+);
+const MapPinIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+const CalIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2"/>
+    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+);
+const UserAssignIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+const TicketIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 10a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8z"/>
+    <path d="M6 10V6a6 6 0 0 1 12 0v4"/>
+  </svg>
+);
+
+const STATUS_FILTERS = ['ALL', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'REJECTED', 'CLOSED'];
 
 export default function MyTicketsPage() {
   const { user } = useAuth();
-  const navigate  = useNavigate();
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter]   = useState({ status:'', priority:'', search:'' });
+  const navigate = useNavigate();
+
+  const [tickets, setTickets]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [filter, setFilter]     = useState('ALL');
+  const [search, setSearch]     = useState('');
+  const [priority, setPriority] = useState('');
 
   useEffect(() => {
-    ticketService.getAllTickets()
+    ticketService.getMyTickets()
       .then(r => setTickets(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
+  const counts = {
+    ALL:         tickets.length,
+    OPEN:        tickets.filter(t => t.status === 'OPEN').length,
+    IN_PROGRESS: tickets.filter(t => t.status === 'IN_PROGRESS').length,
+    RESOLVED:    tickets.filter(t => t.status === 'RESOLVED').length,
+    REJECTED:    tickets.filter(t => t.status === 'REJECTED').length,
+    CLOSED:      tickets.filter(t => t.status === 'CLOSED').length,
+  };
+
   const filtered = tickets.filter(t =>
-    (!filter.status   || t.status   === filter.status) &&
-    (!filter.priority || t.priority === filter.priority) &&
-    (!filter.search   || t.title?.toLowerCase().includes(filter.search.toLowerCase()))
+    (filter === 'ALL' || t.status === filter) &&
+    (!priority || t.priority === priority) &&
+    (!search   || t.title?.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const stats = {
-    total:      tickets.length,
-    open:       tickets.filter(t=>t.status==='OPEN').length,
-    inProgress: tickets.filter(t=>t.status==='IN_PROGRESS').length,
-    resolved:   tickets.filter(t=>t.status==='RESOLVED').length,
-    rejected:   tickets.filter(t=>t.status==='REJECTED').length,
-    closed:     tickets.filter(t=>t.status==='CLOSED').length,
+  const initial = (user?.name?.charAt(0) || user?.email?.charAt(0) || '?').toUpperCase();
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  function formatCreatedAt(d) {
+    if (!d) return '';
+    return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  const inp = {
+    padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8,
+    fontSize: 13, color: '#1e293b', outline: 'none',
+    fontFamily: 'inherit', background: '#f8fafc',
   };
 
   return (
-    <div style={{ padding:'28px 32px', background:'#f8fafc', minHeight:'100vh',
-      fontFamily:'Inter, system-ui, sans-serif' }}>
+    <>
+      {/* Lock the page scroll exactly like MyBookingsPage */}
+      <style>{`html, body { overflow: hidden !important; height: 100%; margin: 0; padding: 0; }`}</style>
 
-      {/* HEADER */}
-      <div style={{ display:'flex', justifyContent:'space-between',
-        alignItems:'center', marginBottom:'24px' }}>
-        <div>
-          <h2 style={{ margin:0, fontSize:'1.5rem', fontWeight:'800',
-            color:'#0f172a', letterSpacing:'-0.02em' }}>
-            My Tickets
-          </h2>
-          <p style={{ margin:'4px 0 0', color:'#94a3b8', fontSize:'0.875rem' }}>
-            {user?.name && <>Welcome, <strong style={{color:'#374151'}}>{user.name}</strong> — </>}
-            track and manage your campus incident reports
-          </p>
-        </div>
-        <button onClick={() => navigate('/tickets/new')} style={{
-          background:'linear-gradient(135deg,#1e40af,#3b82f6)',
-          color:'white', border:'none', borderRadius:'10px',
-          padding:'10px 22px', fontSize:'0.875rem', fontWeight:'700',
-          cursor:'pointer', boxShadow:'0 2px 8px rgba(29,78,216,0.3)',
-          transition:'opacity 0.15s'
-        }}
-        onMouseEnter={e => e.currentTarget.style.opacity='0.9'}
-        onMouseLeave={e => e.currentTarget.style.opacity='1'}>
-          + New Ticket
-        </button>
-      </div>
+      <div style={{
+        fontFamily: 'Inter, system-ui, sans-serif',
+        background: '#F1F5F9',
+        height: 'calc(100vh - 65px)',   // same as bookings
+        overflow: 'hidden',             // page does NOT scroll
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '32px 0',
+        boxSizing: 'border-box',
+      }}>
+        <div style={{
+          maxWidth: 1200, width: '100%', margin: '0 auto',
+          padding: '0 24px', flex: 1, minHeight: 0,
+          display: 'flex', gap: 24, alignItems: 'stretch',
+          boxSizing: 'border-box',
+        }}>
 
-      {/* STAT CARDS */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)',
-        gap:'14px', marginBottom:'24px' }}>
-        {[
-          { label:'Total',       value:stats.total,      bg:'linear-gradient(135deg,#1e40af,#3b82f6)', icon:'🎫' },
-          { label:'Open',        value:stats.open,       bg:'linear-gradient(135deg,#b45309,#f59e0b)', icon:'📬' },
-          { label:'In Progress', value:stats.inProgress, bg:'linear-gradient(135deg,#0e7490,#06b6d4)', icon:'⚙️'  },
-          { label:'Resolved',    value:stats.resolved,   bg:'linear-gradient(135deg,#15803d,#22c55e)', icon:'✓'   },
-        ].map(s => (
-          <div key={s.label} style={{ background:s.bg, borderRadius:'14px',
-            padding:'20px', color:'white',
-            boxShadow:'0 4px 12px rgba(0,0,0,0.15)',
-            position:'relative', overflow:'hidden' }}>
-            <div style={{ position:'absolute', right:'-8px', top:'-8px',
-              fontSize:'3rem', opacity:0.15 }}>{s.icon}</div>
-            <div style={{ fontSize:'0.72rem', fontWeight:'600',
-              textTransform:'uppercase', letterSpacing:'0.08em',
-              opacity:0.85, marginBottom:'10px' }}>{s.label}</div>
-            <div style={{ fontSize:'2.2rem', fontWeight:'800', lineHeight:'1' }}>{s.value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* QUICK FILTER PILLS */}
-      <div style={{ display:'flex', gap:'8px', marginBottom:'16px', flexWrap:'wrap' }}>
-        {[
-          { label:'All',         value:'',            count:stats.total },
-          { label:'Open',        value:'OPEN',        count:stats.open },
-          { label:'In Progress', value:'IN_PROGRESS', count:stats.inProgress },
-          { label:'Resolved',    value:'RESOLVED',    count:stats.resolved },
-          { label:'Rejected',    value:'REJECTED',    count:stats.rejected },
-          { label:'Closed',      value:'CLOSED',      count:stats.closed },
-        ].map(tab => (
-          <button key={tab.value}
-            onClick={() => setFilter({...filter, status:tab.value})}
-            style={{
-              padding:'6px 14px', borderRadius:'20px', fontSize:'0.8rem',
-              fontWeight:'600', cursor:'pointer',
-              border: filter.status===tab.value ? 'none' : '1px solid #e5e7eb',
-              background: filter.status===tab.value ? '#1d4ed8' : 'white',
-              color:       filter.status===tab.value ? 'white'   : '#374151',
-              boxShadow: filter.status===tab.value
-                ? '0 2px 8px rgba(29,78,216,0.3)' : '0 1px 2px rgba(0,0,0,0.05)',
-              transition:'all 0.15s', display:'flex', alignItems:'center', gap:'6px'
+          {/* ── Sidebar ── */}
+          <aside style={{
+            width: 230, flexShrink: 0, background: '#fff',
+            borderRadius: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            <div style={{
+              background: 'linear-gradient(160deg, #0F172A 0%, #1E3A5F 100%)',
+              borderRadius: '16px 16px 0 0',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 12, padding: '32px 20px', flexShrink: 0,
             }}>
-            {tab.label}
-            <span style={{
-              padding:'1px 6px', borderRadius:'10px', fontSize:'0.7rem', fontWeight:'700',
-              background: filter.status===tab.value ? 'rgba(255,255,255,0.2)' : '#f3f4f6',
-              color:       filter.status===tab.value ? 'white' : '#6b7280',
-            }}>{tab.count}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* SEARCH & FILTER BAR */}
-      <div style={{ background:'white', border:'1px solid #f0f0f0', borderRadius:'12px',
-        padding:'14px 18px', marginBottom:'24px',
-        display:'flex', gap:'10px', flexWrap:'wrap', alignItems:'center',
-        boxShadow:'0 2px 8px rgba(0,0,0,0.05)' }}>
-        <div style={{ flex:1, minWidth:'220px', position:'relative' }}>
-          <span style={{ position:'absolute', left:'12px', top:'50%',
-            transform:'translateY(-50%)', color:'#9ca3af' }}>🔍</span>
-          <input className="form-control" style={{ paddingLeft:'34px' }}
-            placeholder="Search your tickets..."
-            value={filter.search}
-            onChange={e => setFilter({...filter, search:e.target.value})} />
-        </div>
-        <select className="form-control" style={{ width:'140px' }}
-          value={filter.priority}
-          onChange={e => setFilter({...filter, priority:e.target.value})}>
-          <option value="">All Priorities</option>
-          {['LOW','MEDIUM','HIGH','CRITICAL'].map(p=>(
-            <option key={p} value={p}>{p}</option>
-          ))}
-        </select>
-        {(filter.status||filter.priority||filter.search) && (
-          <button className="btn btn-secondary" style={{ fontSize:'0.82rem' }}
-            onClick={() => setFilter({status:'',priority:'',search:''})}>
-            Clear all
-          </button>
-        )}
-        <span style={{ marginLeft:'auto', fontSize:'0.8rem', color:'#9ca3af', whiteSpace:'nowrap' }}>
-          {filtered.length} ticket{filtered.length!==1?'s':''}
-        </span>
-      </div>
-
-      {/* LOADING */}
-      {loading && <div className="spinner-container"><div className="spinner"></div></div>}
-
-      {/* EMPTY STATE */}
-      {!loading && filtered.length === 0 && (
-        <div style={{ textAlign:'center', padding:'64px 40px', background:'white',
-          borderRadius:'16px', border:'1px solid #f0f0f0',
-          boxShadow:'0 2px 8px rgba(0,0,0,0.05)' }}>
-          <div style={{ fontSize:'3.5rem', marginBottom:'16px', opacity:0.4 }}>🎫</div>
-          <h3 style={{ margin:'0 0 8px', color:'#0f172a', fontWeight:'700' }}>
-            {filter.search || filter.status || filter.priority
-              ? 'No tickets match your filters'
-              : 'No tickets yet'}
-          </h3>
-          <p style={{ color:'#94a3b8', margin:'0 0 20px', fontSize:'0.9rem' }}>
-            {filter.search || filter.status || filter.priority
-              ? 'Try adjusting your search or filters'
-              : 'Submit your first incident report to get started'}
-          </p>
-          {!filter.search && !filter.status && !filter.priority && (
-            <button onClick={() => navigate('/tickets/new')} style={{
-              background:'linear-gradient(135deg,#1e40af,#3b82f6)',
-              color:'white', border:'none', borderRadius:'10px',
-              padding:'10px 24px', fontSize:'0.875rem', fontWeight:'700',
-              cursor:'pointer', boxShadow:'0 2px 8px rgba(29,78,216,0.3)'
-            }}>
-              + Create Your First Ticket
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* TICKET CARDS GRID */}
-      <div style={{ display:'grid',
-        gridTemplateColumns:'repeat(auto-fill, minmax(320px, 1fr))', gap:'16px' }}>
-        {filtered.map(ticket => (
-          <div key={ticket.id}
-            onClick={() => navigate(`/tickets/${ticket.id}`)}
-            style={{
-              background:'white', borderRadius:'14px', padding:'0',
-              border:'1px solid #f0f0f0', cursor:'pointer',
-              boxShadow:'0 2px 8px rgba(0,0,0,0.05)',
-              transition:'all 0.2s', overflow:'hidden',
-              borderTop:`3px solid ${PRIORITY_COLOR[ticket.priority]||'#e5e7eb'}`
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.boxShadow='0 8px 24px rgba(0,0,0,0.1)';
-              e.currentTarget.style.transform='translateY(-2px)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.05)';
-              e.currentTarget.style.transform='translateY(0)';
-            }}>
-
-            {/* Card header */}
-            <div style={{ padding:'16px 18px 12px' }}>
-              <div style={{ display:'flex', justifyContent:'space-between',
-                alignItems:'flex-start', gap:'8px', marginBottom:'10px' }}>
-                <h4 style={{ margin:0, fontSize:'0.92rem', fontWeight:'700',
-                  color:'#0f172a', flex:1, lineHeight:'1.3',
-                  overflow:'hidden', display:'-webkit-box',
-                  WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
-                  {ticket.title}
-                </h4>
-                <Chip label={ticket.status?.replace('_',' ')}
-                  status={ticket.status} type="status" />
+              {user?.profilePicture ? (
+                <img src={user.profilePicture} alt="avatar"
+                  style={{ width: 68, height: 68, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.2)' }} />
+              ) : (
+                <div style={{
+                  width: 68, height: 68, borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.1)', border: '3px solid rgba(255,255,255,0.18)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontWeight: 'bold', fontSize: 26,
+                }}>{initial}</div>
+              )}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ color: '#fff', fontWeight: 600, fontSize: 15, lineHeight: 1.3 }}>{user?.name || '—'}</div>
+                <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11.5, marginTop: 2, maxWidth: 170, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {user?.email}
+                </div>
               </div>
-
-              <div style={{ display:'flex', gap:'6px', flexWrap:'wrap' }}>
-                <Chip label={ticket.priority} status={ticket.priority} type="priority" />
-                <span style={{ background:'#f1f5f9', color:'#475569',
-                  padding:'3px 10px', borderRadius:'20px',
-                  fontSize:'0.7rem', fontWeight:'600' }}>
-                  {ticket.category}
-                </span>
-                {ticket.faculty && (
-                  <span style={{ background:'#f8fafc', color:'#64748b',
-                    padding:'3px 10px', borderRadius:'20px', fontSize:'0.68rem' }}>
-                    {ticket.faculty.replace('Faculty of ','').replace('School of ','')}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div style={{ padding:'0 18px 12px' }}>
-              <p style={{ margin:0, fontSize:'0.82rem', color:'#6b7280',
-                lineHeight:'1.5', display:'-webkit-box',
-                WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
-                {ticket.description}
-              </p>
-            </div>
-
-            {/* AI triage badge */}
-            {ticket.aiTriage && (
-              <div style={{ margin:'0 18px 12px', background:'#eff6ff',
-                border:'1px solid #bfdbfe', borderRadius:'8px',
-                padding:'8px 12px', fontSize:'0.78rem', color:'#1d4ed8' }}>
-                <strong>AI:</strong> {ticket.aiTriage.suggestedPriority} priority
-                — {ticket.aiTriage.estimatedResolutionTime}
-              </div>
-            )}
-
-            {/* Card footer */}
-            <div style={{ padding:'10px 18px', borderTop:'1px solid #f8fafc',
-              background:'#f8fafc', display:'flex',
-              justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ fontSize:'0.72rem', color:'#94a3b8',
-                display:'flex', alignItems:'center', gap:'4px' }}>
-                📍 {ticket.location || '—'}
+              <span style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: 600, borderRadius: 20, padding: '2px 12px' }}>
+                {user?.role || 'USER'}
               </span>
-              <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
-                {ticket.assignedToName && (
-                  <span style={{ fontSize:'0.7rem', color:'#6b7280',
-                    background:'#e5e7eb', padding:'2px 8px', borderRadius:'10px' }}>
-                    👷 {ticket.assignedToName}
-                  </span>
-                )}
-                <span style={{ fontSize:'0.72rem', color:'#94a3b8' }}>
-                  {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('en-GB',{
-                    day:'2-digit', month:'short', year:'numeric'
-                  }) : ''}
-                </span>
+            </div>
+
+            <div style={{ height: 1, background: '#F1F5F9', flexShrink: 0 }} />
+
+            <nav style={{ display: 'flex', flexDirection: 'column', padding: '8px 0', flex: 1 }}>
+              {NAV_ITEMS.map(item => {
+                const active = item.id === 'tickets';
+                return (
+                  <button key={item.id} onClick={() => navigate(item.path)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 20px', fontSize: 13.5, fontWeight: 500,
+                      width: '100%', textAlign: 'left', cursor: 'pointer',
+                      background: active ? '#EFF6FF' : 'transparent',
+                      color: active ? '#1D4ED8' : '#4B5563',
+                      border: 'none',
+                      borderLeft: active ? '3px solid #1D4ED8' : '3px solid transparent',
+                      transition: 'all 0.15s',
+                    }}>
+                    <span style={{ color: active ? '#1D4ED8' : '#9CA3AF' }}><item.Icon /></span>
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            <div style={{ borderTop: '1px solid #F1F5F9', padding: '16px 20px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: user?.status === 'ACTIVE' ? '#22C55E' : '#F59E0B', display: 'inline-block' }} />
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#6B7280' }}>{user?.status || 'ACTIVE'}</span>
+              </div>
+              <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                Member since {formatDate(user?.createdAt)}
               </div>
             </div>
-          </div>
-        ))}
+          </aside>
+
+          {/* ── Main content ── */}
+          <main style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{
+              flex: 1, minHeight: 0,
+              background: '#fff', borderRadius: 16,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+              padding: '28px',
+              display: 'flex', flexDirection: 'column',  // flex column so inner list can grow
+              boxSizing: 'border-box',
+              overflow: 'hidden',                         // panel itself does NOT scroll
+            }}>
+
+              {/* Page header — flexShrink:0 so it never scrolls away */}
+              <div style={{ flexShrink: 0, marginBottom: 24 }}>
+                <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', marginBottom: 4, letterSpacing: '-0.3px' }}>My Tickets</h1>
+                <p style={{ fontSize: 13, color: '#64748b' }}>View and manage your campus incident reports</p>
+              </div>
+
+              {/* Status filter chips — flexShrink:0 */}
+              <div style={{ flexShrink: 0, display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+                {STATUS_FILTERS.map(s => {
+                  const active = filter === s;
+                  const label = s === 'ALL' ? 'All' : s === 'IN_PROGRESS' ? 'In Progress' : s.charAt(0) + s.slice(1).toLowerCase();
+                  return (
+                    <button key={s} onClick={() => setFilter(s)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '6px 14px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                        cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
+                        borderColor: active ? '#1d4ed8' : '#e2e8f0',
+                        background: active ? '#1d4ed8' : '#fff',
+                        color: active ? '#fff' : '#64748b',
+                      }}>
+                      {label}
+                      <span style={{
+                        padding: '1px 6px', borderRadius: 10, fontSize: 10, fontWeight: 700,
+                        background: active ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
+                        color: active ? '#fff' : '#94a3b8',
+                      }}>{counts[s]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Search + priority — flexShrink:0 */}
+              <div style={{
+                flexShrink: 0,
+                display: 'flex', gap: 10, marginBottom: 22, alignItems: 'center',
+                background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+                padding: '10px 14px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+              }}>
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                  </span>
+                  <input
+                    style={{ ...inp, width: '100%', paddingLeft: 34, background: 'transparent', border: 'none', boxShadow: 'none' }}
+                    placeholder="Search your tickets..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                  />
+                </div>
+                <div style={{ width: 1, height: 24, background: '#e2e8f0' }} />
+                <select style={{ ...inp, width: 140, border: 'none', background: 'transparent' }} value={priority} onChange={e => setPriority(e.target.value)}>
+                  <option value="">All Priorities</option>
+                  {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+                {(search || priority) && (
+                  <button onClick={() => { setSearch(''); setPriority(''); }}
+                    style={{ fontSize: 12, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
+                    Clear
+                  </button>
+                )}
+                <span style={{ fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap', marginLeft: 'auto' }}>
+                  {filtered.length} ticket{filtered.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {/* ── Scrollable ticket list — only this area scrolls ── */}
+              <div style={{
+                flex: 1, minHeight: 0,
+                overflowY: 'auto',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#CBD5E1 transparent',
+                paddingRight: 4,
+              }}>
+
+                {/* Loading */}
+                {loading && (
+                  <div style={{ textAlign: 'center', padding: '80px 0' }}>
+                    <div style={{ width: 36, height: 36, border: '3px solid #e2e8f0', borderTopColor: '#1d4ed8', borderRadius: '50%', margin: '0 auto 14px', animation: 'spin 0.8s linear infinite' }} />
+                    <p style={{ fontSize: 13, color: '#94a3b8' }}>Loading your tickets...</p>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+                  </div>
+                )}
+
+                {/* Empty state */}
+                {!loading && filtered.length === 0 && (
+                  <div style={{ background: '#f8fafc', borderRadius: 14, border: '1px solid #e2e8f0', padding: '70px 20px', textAlign: 'center' }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 14, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                      <TicketIcon />
+                    </div>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                      {filter !== 'ALL' || search || priority ? 'No tickets match your filters' : 'No tickets yet'}
+                    </h3>
+                    <p style={{ fontSize: 13, color: '#94a3b8' }}>
+                      {filter !== 'ALL' || search || priority ? 'Try adjusting your search or filters' : 'Your submitted incident reports will appear here'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Ticket cards */}
+                {!loading && filtered.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {filtered.map(ticket => (
+                      <div
+                        key={ticket.id}
+                        onClick={() => navigate(`/tickets/${ticket.id}`)}
+                        style={{
+                          background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12,
+                          padding: '20px 22px', cursor: 'pointer',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                          transition: 'box-shadow 0.15s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'}
+                        onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'}
+                      >
+                        {/* Left */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <div style={{
+                              width: 34, height: 34, borderRadius: 9,
+                              background: '#eff6ff', border: '1px solid #bfdbfe',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                            }}>
+                              <TicketIcon />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>{ticket.title}</div>
+                              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 1 }}>
+                                Ticket #{ticket.id?.toString().slice(-6).toUpperCase()}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 8, paddingLeft: 42 }}>
+                            {ticket.category && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
+                                <TagIcon /> {ticket.category}
+                              </span>
+                            )}
+                            {ticket.location && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
+                                <MapPinIcon /> {ticket.location}
+                              </span>
+                            )}
+                            {ticket.createdAt && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
+                                <CalIcon /> {formatCreatedAt(ticket.createdAt)}
+                              </span>
+                            )}
+                            {ticket.assignedToName && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#64748b' }}>
+                                <UserAssignIcon /> {ticket.assignedToName}
+                              </span>
+                            )}
+                          </div>
+
+                          {ticket.description && (
+                            <div style={{ fontSize: 12, color: '#94a3b8', paddingLeft: 42 }}>
+                              {ticket.description}
+                            </div>
+                          )}
+
+                          {ticket.adminRemarks && (
+                            <div style={{ marginTop: 8, paddingLeft: 42 }}>
+                              <span style={{ fontSize: 11, color: '#475569', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '3px 10px', borderRadius: 6, display: 'inline-block' }}>
+                                Note: {ticket.adminRemarks}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10, marginLeft: 20, flexShrink: 0 }}>
+                          <StatusBadge status={ticket.status} />
+                          {ticket.priority && (
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                              background: PRIORITY_BG[ticket.priority] || '#f1f5f9',
+                              color: PRIORITY_COLOR[ticket.priority] || '#475569',
+                            }}>
+                              {ticket.priority}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              </div>{/* end scrollable list */}
+            </div>
+          </main>
+
+        </div>
       </div>
-    </div>
+    </>
   );
 }

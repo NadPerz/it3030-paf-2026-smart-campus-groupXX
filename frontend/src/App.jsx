@@ -30,6 +30,7 @@ import CreateTicketPage from "./pages/CreateTicketPage";
 import TicketDetailPage from "./pages/TicketDetailPage";
 import AdminTicketsPage from "./pages/AdminTicketsPage";
 import TechnicianDashboard from "./pages/TechnicianDashboard";
+import TicketsPublicPage from './pages/TicketsPublicPage';
 
 function App() {
   return (
@@ -64,7 +65,8 @@ function App() {
             <Route path="/tickets/new" element={<ProtectedRoute><CreateTicketPage /></ProtectedRoute>} />
             <Route path="/tickets/:id" element={<ProtectedRoute><TicketDetailPage /></ProtectedRoute>} />
             <Route path="/tickets" element={<ProtectedRoute><MyTicketsPage /></ProtectedRoute>} />
-            <Route path="/technician" element={<ProtectedRoute><TechnicianDashboard /></ProtectedRoute>} />
+            <Route path="/technician" element={<ProtectedRoute technicianOnly><TechnicianDashboard /></ProtectedRoute>} />
+            <Route path="/incident-tickets" element={<TicketsPublicPage />} />
 
             {/* ── Admin routes ── */}
             <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
